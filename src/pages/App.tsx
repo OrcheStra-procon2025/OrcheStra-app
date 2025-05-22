@@ -2,9 +2,12 @@ import { useState } from "react";
 import reactLogo from "@/assets/react.svg";
 import viteLogo from "@/assets/vite.svg";
 import "@/css/App.css";
+import { Button, Box } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 
 function App() {
   const [count, setCount] = useState(0);
+  const navigate = useNavigate();
 
   return (
     <>
@@ -28,6 +31,18 @@ function App() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
+      <Box>
+        <Button
+          m="50px"
+          p="5"
+          colorScheme="blue"
+          onClick={() => {
+            navigate("/test");
+          }}
+        >
+          テストページへ遷移
+        </Button>
+      </Box>
     </>
   );
 }
