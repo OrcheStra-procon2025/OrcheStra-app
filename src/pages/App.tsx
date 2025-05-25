@@ -2,7 +2,7 @@ import { useState } from "react";
 import reactLogo from "@/assets/react.svg";
 import viteLogo from "@/assets/vite.svg";
 import "@/css/App.css";
-import { Button, Box, Flex } from "@chakra-ui/react";
+import { Button, Flex, VStack } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 
 function App() {
@@ -35,7 +35,7 @@ function App() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-      <Box>
+      <VStack>
         <Button
           m="50px"
           p="5"
@@ -46,7 +46,18 @@ function App() {
         >
           テストページへ遷移
         </Button>
-      </Box>
+        <Button
+          m="50px"
+          p="50"
+          colorScheme="cyan"
+          fontSize="30"
+          onClick={() => {
+            navigate("/conduct");
+          }}
+        >
+          指揮演奏ページへ遷移
+        </Button>
+      </VStack>
     </>
   );
 }
