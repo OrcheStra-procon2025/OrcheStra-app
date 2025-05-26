@@ -26,7 +26,9 @@ export const PoseAudioController: FC = () => {
     ctx.lineWidth = 2;
 
     // 点を描く
-    for (const point of landmarks) {
+//    for (const point of landmarks) {
+    landmarks.forEach((point, i) => {
+      if (i < 11) return;
       ctx.beginPath();
       ctx.arc(
         point.x * canvas.width,
@@ -36,7 +38,7 @@ export const PoseAudioController: FC = () => {
         2 * Math.PI,
       );
       ctx.fill();
-    }
+    })
 
     // 正しい骨格に基づいて線を描く
     for (const [startIdx, endIdx] of POSE_CONNECTIONS) {
