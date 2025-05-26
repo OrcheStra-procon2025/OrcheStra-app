@@ -73,17 +73,40 @@ export const PoseAudioController: FC = () => {
   return (
     <Box textAlign="center">
       <Box position="relative" w="fit-content">
-        <Box as="video" ref={videoRef} display="none" />
+        {/* カメラ映像をcanvasの下に重ねて表示 */}
+        <Box
+          as="video"
+          ref={videoRef}
+          width={640}
+          height={480}
+          autoPlay
+          muted
+          playsInline
+          position="absolute"
+          top={0}
+          left={0}
+          zIndex={0}
+          objectFit="cover"
+          borderRadius="md"
+          boxShadow="md"
+        />
         <Box
           as="canvas"
           ref={canvasRef}
           width={640}
           height={480}
+          position="absolute"
+          top={0}
+          left={0}
+          zIndex={1}
           border="1px solid"
           borderColor="gray.300"
           borderRadius="md"
           boxShadow="md"
+          pointerEvents="none"
         />
+        {/* Wrapperの高さを確保 */}
+        <Box width={640} height={480} visibility="hidden" />
       </Box>
       <Input
         type="file"
