@@ -41,7 +41,7 @@ function App() {
           p="5"
           colorScheme="blue"
           onClick={() => {
-            navigate("/test");
+            navigate("/connection");
           }}
         >
           テストページへ遷移
