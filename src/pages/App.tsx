@@ -4,7 +4,7 @@ import viteLogo from "@/assets/vite.svg";
 import "@/css/App.css";
 import { Button, Box, Flex } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
-import ThreejsSphere from "@/components/threejs/ThreejsSphere"
+import ThreejsSphere from "@/components/threejs/ThreejsSphere";
 
 function App() {
   const [count, setCount] = useState(0);
