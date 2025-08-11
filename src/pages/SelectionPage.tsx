@@ -7,13 +7,7 @@ import { faPlay } from "@fortawesome/free-solid-svg-icons";
 const SelectionPage = () => {
   return (
     <>
-      <Flex
-        width="100%"
-        bg="gray.100"
-        alignItems="center"
-        gap="30px"
-        marginBottom="20px"
-      >
+      <Flex width="100%" alignItems="center" gap="30px" marginBottom="20px">
         <Box maxW="200px;">
           <img src={logo} alt="Logo" />
         </Box>
