@@ -1,0 +1,1 @@
+tfjs_modelがTensorFlow.js形式のモデル本体です。
