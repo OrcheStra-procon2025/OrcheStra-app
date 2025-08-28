@@ -1,0 +1,15 @@
+# dataフォルダの中身は基本的にすべて無視する
+data/*
+
+# ただし、tfjs_modelフォルダだけは無視しない
+!data/tfjs_model/
+
+# Pythonのキャッシュファイルや仮想環境は無視する
+__pycache__/
+venv/
+*.pyc
+
+# エディタやOS固有の設定ファイルは無視する
+.vscode/
+.idea/
+.DS_Store

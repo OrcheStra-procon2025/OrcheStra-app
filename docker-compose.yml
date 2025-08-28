@@ -1,0 +1,18 @@
+services:
+  notebook:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    # ★★★★★ ここから追記 ★★★★★
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    # ★★★★★ ここまで追記 ★★★★★
+    command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --notebook-dir=/app/src
