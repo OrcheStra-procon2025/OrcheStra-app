@@ -6,6 +6,7 @@ import "@/css/index.css"
 import App from "@/pages/App.tsx";
 import ChakraTest from "./pages/ChakraTest";
 import SelectionPage from "./pages/SelectionPage";
+import PlayingPage from "./pages/PlayingPage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/" element={<App />} />
           <Route path="test" element={<ChakraTest />} />
           <Route path="select" element={<SelectionPage />} />
+          <Route path="play" element={<PlayingPage />} />
           {/* <Route path="*" element={<NoMatch />} /> */}
         </Routes>
       </BrowserRouter>
