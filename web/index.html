@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>フィードバック生成テスト</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2em;
+            background-color: #f0f2f5;
+        }
+        #result {
+            margin-top: 1em;
+            padding: 1em;
+            border: 1px solid #ccc;
+            background-color: white;
+            white-space: pre-wrap; /* 改行をそのまま表示 */
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AIによる指揮フィードバック</h1>
+    <p>以下のボタンを押すと、演奏指揮データからフィードバックが生成されます。</p>
+    <button id="generateButton">フィードバックを生成</button>
+
+    <h2>生成されたフィードバック:</h2>
+    <div id="result">ここに結果が表示されます...</div>
+
+    <script>
+        // --- ステップ1：入力となるデータ構造（魔王のサンプル） ---
+        const segments = [
+            { style: '力強い',   startTime: 0,   endTime: 45 },  // 第1主題：有名な「運命の動機」
+            { style: '穏やか',   startTime: 45,  endTime: 70 },  // 第2主題：対照的な優しい旋律
+            { style: '緊迫した', startTime: 70,  endTime: 150 }, // 展開部：動機がぶつかり合う複雑な部分
+            { style: '力強い',   startTime: 150, endTime: 175 }, // 再現部：第1主題の再来
+            { style: '静寂',     startTime: 175, endTime: 185 }, // オーボエのカデンツァ（独奏）
+            { style: '激しい',   startTime: 185, endTime: 300 }  // コーダ：終結に向けて激しく盛り上がる部分
+        ];
+
+        // --- ステップ2：フィードバック文章のテンプレート辞書 ---
+        const feedbackTemplates = {
+            '緊迫した': {
+                start: (s, e) => `最初の${s}秒から${e}秒までは、緊迫した表現で音楽が始まりましたね。物語の幕開けを感じさせます。`,
+                middle: (s, e) => `続く${s}秒から${e}秒の区間は、再び緊迫した雰囲気に戻りました。`,
+                end: (s, e) => `そして最後の${s}秒から${e}秒は、緊迫した表現のままフィナーレを迎えました。`
+            },
+            '穏やか': {
+                start: (s, e) => `最初の${s}秒から${e}秒は、穏やかな表現で落ち着いて曲が始まりましたね。`,
+                middle: (s, e) => `続く${s}秒から${e}秒の区間は、穏やかな表現に変化し、少し落ち着いた時間でした。`,
+                end: (s, e) => `最後の${s}秒から${e}秒は、穏やかな表現で静かに曲を締めくくりました。`
+            },
+            '切迫した': {
+                middle: (s, e) => `そこから${e}秒までは、切迫したような鋭い動きが特徴的でした。`
+            },
+            '滑らか': {
+                middle: (s, e) => `${s}秒から${e}秒の区間では、滑らかで流れるような指揮が、音楽に一体感を与えています。`
+            },
+            '力強い': {
+                middle: (s, e) => `${s}秒から表現が力強いものに変わり、音楽が盛り上がっていく様子が伝わります。`
+            },
+            '激しい': {
+                middle: (s, e) => `${s}秒から${e}秒にかけては、パフォーマンスのクライマックスに向けて、非常に激しい動きで感情を表現していましたね。`
+            },
+            '静寂': {
+                end: (s, e) => `そして最後の${s}秒から${e}秒は、静寂とも言える動きのない表現で、強い余韻を残して締めくくられました。`
+            }
+        };
+
+        // --- ステップ3：テンプレートを使って文章を組み立てるロジック ---
+        function generateFeedbackText(segments) {
+            const feedbackParts = [];
+            segments.forEach((segment, index) => {
+                const { style, startTime, endTime } = segment;
+                const templateSet = feedbackTemplates[style];
+                if (!templateSet) return; // テンプレートがなければスキップ
+
+                let sentence;
+                if (index === 0 && templateSet.start) {
+                    sentence = templateSet.start(startTime, endTime);
+                } else if (index === segments.length - 1 && templateSet.end) {
+                    sentence = templateSet.end(startTime, endTime);
+                } else if (templateSet.middle) {
+                    sentence = templateSet.middle(startTime, endTime);
+                } else { // middleがない場合の代替
+                    sentence = templateSet.start || templateSet.end;
+                    if(sentence) sentence = sentence(startTime, endTime);
+                }
+                
+                if (sentence) feedbackParts.push(sentence);
+            });
+            return feedbackParts.join(' ');
+        }
+
+        // --- 実行部分 ---
+        const generateButton = document.getElementById('generateButton');
+        const resultDiv = document.getElementById('result');
+
+        generateButton.addEventListener('click', () => {
+            const finalFeedback = generateFeedbackText(segments);
+            resultDiv.textContent = finalFeedback;
+        });
+    </script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 services:
+  # AIの学習やデータ処理を行うサービス
   notebook:
     build: .
     ports:
@@ -6,13 +7,22 @@ services:
     volumes:
       - ./src:/app/src
       - ./data:/app/data
-    # ★★★★★ ここから追記 ★★★★★
+    shm_size: '2gb'  # ★ フリーズ対策のためにこの行を追加
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [ gpu ]
-    # ★★★★★ ここまで追記 ★★★★★
+              capabilities: [gpu]
+    # commandは、upした時のデフォルト動作。runで上書き可能。
     command: jupyter notebook --ip 0.0.0.0 --no-browser --allow-root --notebook-dir=/app/src
+
+  # Webページをブラウザに表示するためのサービス
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/usr/share/nginx/html
+      - ./data:/usr/share/nginx/html/data:ro
