@@ -3,6 +3,8 @@ data/*
 
 # ただし、tfjs_modelフォルダだけは無視しない
 !data/tfjs_model/
+!data/scaler.gz
+!data/scaler.json
 
 # Pythonのキャッシュファイルや仮想環境は無視する
 __pycache__/
