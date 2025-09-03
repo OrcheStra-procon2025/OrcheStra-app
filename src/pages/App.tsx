@@ -4,7 +4,7 @@ import viteLogo from "@/assets/vite.svg";
 import "@/css/App.css";
 import { Button, Box, Flex } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
-import ThreejsSphere from "@/components/threejs/ThreejsSphere";
+import ThreejsEffect from "@/components/threejs/ThreejsEffect";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -12,7 +12,7 @@ function App() {
 
   return (
     <>
-      <ThreejsSphere />
+      <ThreejsEffect />
       <Flex justify="center">
         <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
