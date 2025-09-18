@@ -1,5 +1,5 @@
 export function testWS(){
-    const ws = new WebSocket("ws://localhost:8080");
+    const ws = new WebSocket("ws://192.168.110.107:8080");
 
     ws.onopen = () =>{
         console.log("WebSocket接続が確立");
