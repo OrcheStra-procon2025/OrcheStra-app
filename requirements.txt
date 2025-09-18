@@ -15,5 +15,8 @@ seaborn
 opencv-python
 mediapipe
 
-# TensorFlow.jsモデル変換ツール
-tensorflowjs
+# TensorFlow.jsモデル変換ツール (バージョンを固定)
+tensorflowjs==4.17.0
+
+# 進捗表示用
+tqdm

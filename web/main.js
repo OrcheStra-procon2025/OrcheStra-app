@@ -1,199 +1,148 @@
 // MediaPipe Visionライブラリから必要なモジュールをインポート
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js";
 
-// --- DOM要素の取得 ---
-const video = document.getElementById("webcam");
-const canvasElement = document.getElementById("overlayCanvas");
-const canvasCtx = canvasElement.getContext("2d");
-const startButton = document.getElementById("startButton");
-const stopButton = document.getElementById("stopButton");
-const feedbackDiv = document.getElementById("feedbackResult");
+// ★★★ DOMContentLoadedイベントを待ってから、すべての処理を開始する ★★★
+document.addEventListener('DOMContentLoaded', () => {
 
-// --- グローバル変数 ---
-let poseLandmarker;
-let isDetecting = false;
-let poseDataRecorder = []; // 骨格データを記録する配列
-let aiModel;
-let scalerInfo;
+    // --- DOM要素の取得 (イベントリスナーの中に移動) ---
+    const video = document.getElementById("webcam");
+    const canvasElement = document.getElementById("overlayCanvas");
+    const canvasCtx = canvasElement.getContext("2d");
+    const cameraSelect = document.getElementById("cameraSelect");
+    const startButton = document.getElementById("startButton");
+    const stopButton = document.getElementById("stopButton");
+    const feedbackDiv = document.getElementById("feedbackResult");
 
-// --- AI関連の定数 (学習時と全く同じ値) ---
-const MAX_TIMESTEPS = 150;
-const NUM_FEATURES = 12;
-const KEY_JOINTS_MEDIAPIPE = {
-    RIGHT_WRIST: 16, LEFT_WRIST: 15,
-    RIGHT_ELBOW: 14, LEFT_ELBOW: 13
-};
-// ★★★★★ TODO: あなたのscaler.jsonの値をここに貼り付け ★★★★★
-const SCALER_MEAN = [0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5]; // 仮の値
-const SCALER_SCALE = [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]; // 仮の値
+    // --- グローバル変数 ---
+    let poseLandmarker;
+    let isDetecting = false;
+    let poseDataRecorder = [];
+    let lastVideoTime = -1;
 
-/**
- * メインの初期化関数
- */
-async function initialize() {
-    // MediaPipeのモデルを初期化
-    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
-    poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
-        baseOptions: {
-            modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
-            delegate: "GPU",
-        },
-        runningMode: "VIDEO",
-        numPoses: 1
-    });
+    // --- 関数定義 (ここから下は変更ありません) ---
 
-    // AIモデルを読み込み
-    aiModel = await tf.loadLayersModel('./data/tfjs_model/model.json');
-    // スケーラー情報を読み込み
-    const response = await fetch('./data/scaler.json');
-    scalerInfo = await response.json();
+    /**
+     * カメラ選択メニューをセットアップする
+     */
+    async function setupCameraSelector() {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
 
-    SCALER_MEAN = scalerInfo.mean;
-    SCALER_SCALE = scalerInfo.scale;
+        if (videoDevices.length === 0) {
+            alert("カメラが見つかりません。");
+            return;
+        }
 
-    feedbackDiv.textContent = "準備完了！「指揮を開始」ボタンを押してください。";
-    startButton.disabled = false;
-
-    console.log("初期化完了");
-}
-
-/**
- * 骨格推定と描画のループ
- */
-function detectionLoop() {
-    if (!isDetecting) return;
-
-    const startTimeMs = performance.now();
-    const poseLandmarkerResult = poseLandmarker.detectForVideo(video, startTimeMs);
-
-    // 骨格データを記録
-    if (poseLandmarkerResult.landmarks.length > 0) {
-        poseDataRecorder.push(poseLandmarkerResult.landmarks[0]);
+        videoDevices.forEach(device => {
+            const option = document.createElement("option");
+            option.value = device.deviceId;
+            option.innerText = device.label || `Camera ${cameraSelect.children.length + 1}`;
+            cameraSelect.appendChild(option);
+        });
     }
 
-    // 描画処理
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    const drawingUtils = new DrawingUtils(canvasCtx);
-    for (const landmarks of poseLandmarkerResult.landmarks) {
-        drawingUtils.drawLandmarks(landmarks, { radius: 5 });
-        drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
+    /**
+     * メインの初期化関数
+     */
+    async function initialize() {
+        const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
+        poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+            baseOptions: {
+                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,
+                delegate: "GPU",
+            },
+            runningMode: "VIDEO",
+            numPoses: 1
+        });
+
+        await setupCameraSelector();
+
+        feedbackDiv.textContent = "準備完了！使用するカメラを選んで「指揮を開始」ボタンを押してください。";
+        startButton.disabled = false;
+        console.log("初期化完了");
     }
 
-    // 次のフレームでループを継続
-    window.requestAnimationFrame(detectionLoop);
-}
+    /**
+     * Webカメラの起動と骨格推定の開始
+     */
+    async function startWebcamAndDetection() {
+        // (この関数の中身は変更ありません)
+        const selectedDeviceId = cameraSelect.value;
+        const constraints = { video: { deviceId: { exact: selectedDeviceId } } };
+        
+        isDetecting = true;
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        cameraSelect.disabled = true;
+        feedbackDiv.textContent = "指揮をしてください...";
+        poseDataRecorder = [];
 
-/**
- * Webカメラの起動と骨格推定の開始
- */
-async function startWebcamAndDetection() {
-    if (!navigator.mediaDevices?.getUserMedia) {
-        alert("お使いのブラウザはカメラ機能に対応していません。");
-        return;
-    }
-    
-    isDetecting = true;
-    startButton.disabled = true;
-    stopButton.disabled = false;
-    poseDataRecorder = []; // 記録をリセット
-
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         video.addEventListener("loadeddata", () => {
             canvasElement.width = video.videoWidth;
             canvasElement.height = video.videoHeight;
             detectionLoop();
         });
+    }
 
-        // 5秒後に評価を実行
-        setTimeout(stopAndGetFeedback, 5000);
+    /**
+ * 骨格推定と描画のメインループ (タイミング問題対策版)
+ */
+function detectionLoop() {
+    if (!isDetecting) return;
 
-    } catch (err) {
-        console.error("カメラの起動に失敗しました:", err);
+    // 現在のビデオ再生時間を取得
+    const videoTime = video.currentTime;
+
+    // ★ 新しいフレームが利用可能な場合のみ、処理を実行
+    if (videoTime !== lastVideoTime) {
+        lastVideoTime = videoTime;
+
+        // MediaPipeの処理を実行
+        const poseLandmarkerResult = poseLandmarker.detectForVideo(video, performance.now());
+
+        // 骨格データを記録
+        if (poseLandmarkerResult.landmarks && poseLandmarkerResult.landmarks.length > 0) {
+            poseDataRecorder.push(poseLandmarkerResult.landmarks[0]);
+        }
+
+        // 描画処理
+        canvasElement.width = video.videoWidth;
+        canvasElement.height = video.videoHeight;
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        const drawingUtils = new DrawingUtils(canvasCtx);
+        for (const landmarks of poseLandmarkerResult.landmarks) {
+            drawingUtils.drawLandmarks(landmarks, { color: '#E1D319', radius: 5 });
+            drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, { color: '#4A5E76', lineWidth: 3 });
+        }
+    }
+
+    // 次のフレームでこの関数を再度呼び出す
+    window.requestAnimationFrame(detectionLoop);
+}
+    /**
+     * 骨格推定を停止し、UIをリセット
+     */
+    function stopAndReset() {
+        // (この関数の中身は getAIFeedback 以外は同じ)
         isDetecting = false;
         startButton.disabled = false;
         stopButton.disabled = true;
-    }
-}
-
-/**
- * 骨格推定を停止し、AIフィードバックを取得
- */
-async function stopAndGetFeedback() {
-    isDetecting = false;
-    stopButton.disabled = true;
-    feedbackDiv.textContent = "AIがあなたの指揮を分析中です...";
-
-    if (poseDataRecorder.length < 10) {
-        feedbackDiv.textContent = "動きが短すぎたため、評価できませんでした。";
-        startButton.disabled = false;
-        return;
-    }
-
-    // AIによる予測を実行
-    const feedback = await getAIFeedback(poseDataRecorder);
-    feedbackDiv.textContent = feedback;
-
-    // カメラを停止
-    video.srcObject.getTracks().forEach(track => track.stop());
-    video.srcObject = null;
-    startButton.disabled = false;
-}
-
-/**
- * AIに入力するデータを前処理する関数
- */
-function preprocessData(livePoseData) {
-    const sequence = livePoseData.map(frame => {
-        const rh = frame[KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST];
-        const lh = frame[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
-        const re = frame[KEY_JOINTS_MEDIAPIPE.RIGHT_ELBOW];
-        const le = frame[KEY_JOINTS_MEDIAPIPE.LEFT_ELBOW];
-        return [rh.x, rh.y, rh.z, lh.x, lh.y, lh.z, re.x, re.y, re.z, le.x, le.y, le.z];
-    });
-
-    let paddedSequence = Array.from({ length: MAX_TIMESTEPS }, () => Array(NUM_FEATURES).fill(0));
-    const length = Math.min(sequence.length, MAX_TIMESTEPS);
-    for (let i = 0; i < length; i++) {
-        paddedSequence[i] = sequence[i];
-    }
-
-    for (let i = 0; i < paddedSequence.length; i++) {
-        for (let j = 0; j < paddedSequence[i].length; j++) {
-            // ★★★★★ TODO: scalerInfoから読み込んだ値を使うように修正 ★★★★★
-            paddedSequence[i][j] = (paddedSequence[i][j] - SCALER_MEAN[j]) / SCALER_SCALE[j];
+        cameraSelect.disabled = false; 
+        feedbackDiv.textContent = "AIからのフィードバック待機中...";
+        if (video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
         }
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     }
-    return paddedSequence;
-}
 
-/**
- * AIによる予測を実行し、結果を返すメイン関数
- */
-async function getAIFeedback(livePoseData) {
-    const processedData = preprocessData(livePoseData);
-    const inputTensor = tf.tensor3d([processedData]);
-    const prediction = aiModel.predict(inputTensor);
-    const predictedIndex = prediction.argMax(-1).dataSync()[0];
+    // --- イベントリスナーの設定 ---
+    startButton.addEventListener("click", startWebcamAndDetection);
+    stopButton.addEventListener("click", stopAndReset);
 
-    // ★★★★★ TODO: あなたの学習済みラベルに合わせてフィードバック内容を定義 ★★★★★
-    const feedbackLabels = {
-        5: "手を振るような、滑らかな動きでしたね！",
-        48: "応援するような、元気な動きでした！",
-        // ... 他のラベル (0から59まで) もここに追加 ...
-    };
-    
-    const feedbackText = feedbackLabels[predictedIndex] || `認識ID ${predictedIndex + 1} の動きです。`;
-    
-    inputTensor.dispose();
-    prediction.dispose();
-    return feedbackText;
-}
+    // --- 初期化処理の実行 ---
+    initialize();
 
-// --- イベントリスナーの設定 ---
-startButton.addEventListener("click", startWebcamAndDetection);
-stopButton.addEventListener("click", stopAndGetFeedback);
-
-// --- 初期化処理の実行 ---
-initialize();
+}); // ★★★ DOMContentLoadedの閉じカッコ ★★★

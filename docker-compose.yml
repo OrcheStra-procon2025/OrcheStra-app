@@ -26,3 +26,12 @@ services:
     volumes:
       - ./web:/usr/share/nginx/html
       - ./data:/usr/share/nginx/html/data:ro
+
+# 骨格推定を実行するサービス
+  mediapipe:
+    build: .
+    volumes:
+      - ./src:/app/src
+      - ./output:/app/output # 骨格データを保存するフォルダ
+    devices:
+      - "/dev/video0:/dev/video0" # PCのWebカメラをコンテナに接続
