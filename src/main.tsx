@@ -6,7 +6,7 @@ import "@/css/index.css";
 import App from "@/pages/App.tsx";
 import ChakraTest from "./pages/ChakraTest";
 import SelectionPage from "./pages/SelectionPage";
-import Camera from "./pages/camera";
+import PlayingPage from "./pages/PlayingPage";
 //import Result from "./pages/result";
 
 createRoot(document.getElementById("root")!).render(
@@ -17,7 +17,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/" element={<App />} />
           <Route path="test" element={<ChakraTest />} />
           <Route path="select" element={<SelectionPage />} />
-          <Route path="camera" element={<Camera />} />
+          <Route path="play" element={<PlayingPage />} />
         </Routes>
       </BrowserRouter>
     </ChakraProvider>

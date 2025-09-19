@@ -11,7 +11,7 @@ const SelectionPage = () => {
           <img src={logo} alt="Logo" />
         </Box>
       </Flex>
-      <Link href="/camera" about="_blank">
+      <Link href="/play" about="_blank">
         <Button colorScheme="blue" marginTop="20px">
           <FontAwesomeIcon icon={faPlay} style={{ marginRight: "10px" }} />
           スタート！
