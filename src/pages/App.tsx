@@ -22,10 +22,7 @@ function App() {
       <h1>Vite + React</h1>
       <div className="card">
         <Link to="/select">
-          <Button
-            colorScheme="green"
-            m="10px"
-          >
+          <Button colorScheme="green" m="10px">
             開始
           </Button>
         </Link>

@@ -1,10 +1,7 @@
 import logo from "@/assets/logo.png";
-import { Flex, Text, Box, Heading, Link, Button } from "@chakra-ui/react";
-import SelectableMusicList from "@/components/SelectableMusicList";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlay } from "@fortawesome/free-solid-svg-icons";
+import { Flex, Box, Heading } from "@chakra-ui/react";
 
-const SelectionPage = () => {
+const Camera = () => {
   return (
     <>
       <Box>
@@ -15,11 +12,10 @@ const SelectionPage = () => {
           <Heading as="h2" fontWeight="medium" size="xl">
             指揮しよう！
           </Heading>
-
         </Flex>
       </Box>
     </>
   );
 };
 
-export default SelectionPage;
+export default Camera;
