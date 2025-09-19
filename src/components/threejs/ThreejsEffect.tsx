@@ -81,36 +81,6 @@ const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
     ]);
   }, [x, y]);
 
-  /*const isMouseDownRef = useRef(false)
-
-  useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if(isMouseDownRef.current == true){
-        setComponents((prev) => [
-          ...prev,
-          {
-            id: Date.now() + Math.random(),
-            position: [
-              (event.clientX - window.innerWidth / 2) / 100,
-              -(event.clientY - window.innerHeight / 2) / 100,
-              0,
-            ],
-          },
-        ]);
-      }
-    };
-
-    document.addEventListener("pointerdown", ()=>{isMouseDownRef.current = true});
-    document.addEventListener("pointermove", handleClick);
-    document.addEventListener("pointerup", ()=>{isMouseDownRef.current = false});
-
-    return () => {
-      document.removeEventListener("pointerdown", ()=>{isMouseDownRef.current = true});
-      document.removeEventListener("pointermove", handleClick);
-      document.removeEventListener("pointerup", ()=>{isMouseDownRef.current = false});
-    };
-  }, []);*/
-
   const handleDelete = (id: number) => {
     setComponents((prev) => prev.filter((c) => c.id !== id));
   };
