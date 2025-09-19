@@ -9,8 +9,13 @@ import {
   Button,
 } from "@chakra-ui/react";
 
-export const TestModal = ({isModalOpen, onModalClose}:{isModalOpen: boolean; onModalClose: ()=> void}) => {
-
+export const TestModal = ({
+  isModalOpen,
+  onModalClose,
+}: {
+  isModalOpen: boolean;
+  onModalClose: () => void;
+}) => {
   return (
     <>
       <Modal isOpen={isModalOpen} onClose={onModalClose}>
@@ -28,4 +33,4 @@ export const TestModal = ({isModalOpen, onModalClose}:{isModalOpen: boolean; onM
       </Modal>
     </>
   );
-}
+};

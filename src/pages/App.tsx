@@ -1,13 +1,11 @@
-import { useState } from "react";
 import reactLogo from "@/assets/react.svg";
 import viteLogo from "@/assets/vite.svg";
 import "@/css/App.css";
 import { Button, Box, Flex } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ThreejsSphere from "@/components/threejs/ThreejsSphere";
 
 function App() {
-  const [count, setCount] = useState(0);
   const navigate = useNavigate();
 
   return (
@@ -23,13 +21,11 @@ function App() {
       </Flex>
       <h1>Vite + React</h1>
       <div className="card">
-        <Button
-          colorScheme="green"
-          m="10px"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          count is {count}
-        </Button>
+        <Link to="/select">
+          <Button colorScheme="green" m="10px">
+            開始
+          </Button>
+        </Link>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
