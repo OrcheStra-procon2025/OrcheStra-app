@@ -12,7 +12,7 @@ function App() {
 
   return (
     <>
-      <ThreejsEffect />
+      <ThreejsEffect x={0} y={0} />
       <Flex justify="center">
         <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />
