@@ -2,6 +2,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils";
+import { Object3D } from "three";
 
 type Props = {
   id: number;
@@ -15,23 +16,34 @@ const rand = (min: number, max: number): number => {
 };
 
 const Model = ({ id, position, url, onDelete }: Props) => {
-  const randomPosition = useRef(position);
-  randomPosition.current[0] += rand(-0.5, 0.5);
-  randomPosition.current[1] += rand(-0.5, 0.5);
-  randomPosition.current[2] += rand(-0.5, 0.5);
-
-  const createdAtRef = useRef(performance.now());
   const { scene } = useGLTF(url);
-  const clonedSceneRef = useRef(clone(scene));
+  const randomPosition = useRef<[number, number, number]>([0, 0, 0])
+  const createdAtRef = useRef<number>(0)
+  const clonedSceneRef = useRef<Object3D>(new Object3D)
+  
+  const defaultRotateY = useRef<number>(0);
+  const timeToDelete = useRef<number>(0);
+  const directionRef = useRef<number>(0);
+  const directionPowerRef = useRef<number>(0);
+  const rotateDirectionRef = useRef<number>(0);
+  const randomScaleRef = useRef<number>(0);
+  
+  useEffect(()=>{
+    randomPosition.current = position;
+    randomPosition.current[0] += rand(-0.5, 0.5);
+    randomPosition.current[1] += rand(-0.5, 0.5);
+    randomPosition.current[2] += rand(-0.5, 0.5);
 
-  const defaultRotateY = useRef(rand(-90, 90));
-  const timeToDelete = useRef(rand(250, 2000));
-  const directionRef = useRef(Math.random() <= 0.5 ? 1 : -1);
-  const directionPowerRef = useRef(rand(-1, 1));
-  const rotateDirectionRef = useRef(Math.random() <= 0.5 ? 1 : -1);
-  const randomScaleRef = useRef(
-    Math.random() <= 0.1 ? rand(1, 1.25) : rand(0.25, 0.5),
-  );
+    createdAtRef.current = performance.now();
+    clonedSceneRef.current = clone(scene);
+
+    defaultRotateY.current = rand(-90, 90);
+    timeToDelete.current = rand(250, 2000);
+    directionRef.current = Math.random() <= 0.5 ? 1 : -1;
+    directionPowerRef.current = rand(-1, 1);
+    rotateDirectionRef.current = Math.random() <= 0.5 ? 1 : -1;
+    randomScaleRef.current = Math.random() <= 0.1 ? rand(1, 1.25) : rand(0.25, 0.5);
+  }, [])
 
   useFrame(() => {
     if (performance.now() - createdAtRef.current > timeToDelete.current) {
@@ -79,6 +91,7 @@ const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
         position: [x / 100, -y / 100, 0],
       },
     ]);
+    return
   }, [x, y]);
 
   const handleDelete = (id: number) => {
