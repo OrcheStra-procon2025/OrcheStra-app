@@ -7,8 +7,6 @@ const MAX_TIMESTEPS = 150;
 const NUM_FEATURES = 12;
 
 
-// ---------- 内部処理 ----------
-
 const analyzeSequence = async (fullPoseData: NormalizedLandmarkList[], aiModel: tf.LayersModel, scalerInfo: ScalerInfoModel) => {
     console.log("--- AI分析開始 ---");
     const styleSequence = [];
@@ -68,11 +66,11 @@ const analyzeSequence = async (fullPoseData: NormalizedLandmarkList[], aiModel: 
     return styleSequence;
 }
 
-function segmentSequence(styleSequence: string[]) {
+const segmentSequence = (styleSequence: string[]) => {
     return styleSequence; // 必要に応じて分割処理を追加
 }
 
-function generateFeedbackText(segments: string[]) {
+const generateFeedbackText = (segments: string[]) => {
     if (segments.length === 0) return "データが不足しています。";
     const unique = [...new Set(segments)];
     return `今回の指揮は「${unique.join('・')}」の傾向が見られました。`;
