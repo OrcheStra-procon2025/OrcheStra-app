@@ -5,7 +5,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "@/css/index.css";
 import SelectionPage from "./pages/SelectionPage";
 import PlayingPage from "./pages/PlayingPage";
-//import Result from "./pages/Result";
 //import Result from "./pages/result";
 
 createRoot(document.getElementById("root")!).render(
@@ -15,7 +14,6 @@ createRoot(document.getElementById("root")!).render(
         <Routes>
           <Route path="/" element={<SelectionPage />} />
           <Route path="play" element={<PlayingPage />} />
-         
         </Routes>
       </BrowserRouter>
     </ChakraProvider>
