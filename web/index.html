@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestra - 指揮者体験システム</title>
+
+    <!-- スタイルシート -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- ✅ TensorFlow.js フルビルド (LayersModel対応) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
+</head>
+<body>
+    <h1>Orchestra - 指揮者体験システム</h1>
+
+    <!-- ===== 指揮画面 ===== -->
+    <section id="conducting-screen">
+        <div class="vision-container">
+            <video id="webcam" autoplay playsinline muted></video>
+            <canvas id="overlayCanvas"></canvas>
+        </div>
+        <div class="controls">
+            <select id="cameraSelect" title="使用するカメラを選択"></select>
+            <button id="startButton" disabled>準備中...</button>
+            <button id="stopButton" class="hidden">指揮を終了</button>
+        </div>
+    </section>
+
+    <!-- ===== フィードバック画面 ===== -->
+    <section id="feedback-screen" class="hidden">
+        <h2>AIによるフィードバック</h2>
+        <div id="feedback-loader" class="loader hidden"></div>
+        <div id="feedbackResult"></div>
+        <button id="retryButton" class="hidden">もう一度試す</button>
+    </section>
+
+    <!-- ✅ アプリケーションスクリプト -->
+    <!-- TensorFlow.js はグローバル変数 tf として利用可能 -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

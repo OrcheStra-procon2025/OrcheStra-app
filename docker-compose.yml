@@ -1,0 +1,26 @@
+services:
+  # AIの学習やデータ処理を行うサービス
+  notebook:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    shm_size: '2gb' # メモリ不足対策 (Mac/Windows共通で有効)
+
+  # Webページをブラウザに表示するためのサービス
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/usr/share/nginx/html
+      - ./data:/usr/share/nginx/html/data:ro
+
+  # Pythonで骨格推定を実行するためのサービス
+  mediapipe:
+    build: .
+    volumes:
+      - ./src:/app/src
+      - ./output:/app/output
