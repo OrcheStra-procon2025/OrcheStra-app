@@ -1,5 +1,3 @@
-// src/pages/PlayingPage.tsx (Chakra UI版)
-
 import { useRef, useState, useEffect, useCallback } from "react";
 import {
   Box,
@@ -11,16 +9,12 @@ import {
   Text,
   Spinner,
   Center,
-  useColorModeValue,
   chakra,
 } from "@chakra-ui/react";
-
-// カスタムフックのインポート (パスは環境に合わせて調整してください)
 import { useVisionController } from "@/hooks/useVisionController";
 import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import type { NormalizedLandmarkList } from "@/utils/models"; // 型をインポート
 
-// --- 1. カメラ選択機能のカスタムフック（再掲、今回は変更なし） ---
 const useCameraSelector = () => {
   // ... (useCameraSelectorのコードをそのままここに含めるか、外部ファイルからインポートしてください) ...
   const [cameraDevices, setCameraDevices] = useState<
@@ -72,7 +66,16 @@ const useCameraSelector = () => {
 };
 
 const PlayingPage = () => {
-  // 参照 (DOM要素)
+  useEffect(() => {
+    const socket = new WebSocket("ws://10.76.190.56"); // 仮
+    socket.addEventListener("open", () => {
+      console.log("WS connected!");
+    });
+    socket.addEventListener("message", (event) => {
+      const accel_info = JSON.parse(event.data);
+      console.log(accel_info);
+    });
+  }, []);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -105,9 +108,7 @@ const PlayingPage = () => {
     !aiError;
   const isDisabled = !isReady || !selectedDeviceId;
 
-  // スタイル
-  const bgColor = useColorModeValue("#f0f2f5", "gray.900"); // bodyの背景色
-  const primaryColor = "#4A5E76"; // ボタンの背景色
+  const primaryColor = "skyblue";
   const disabledColor = "#A9A9A9"; // ボタンの無効色
 
   const handleStart = async () => {
@@ -166,7 +167,7 @@ const PlayingPage = () => {
   // --- レンダリング ---
   return (
     // bodyのスタイルをVStackとBoxで再現
-    <VStack spacing="20px" p="20px" bg={bgColor} minH="100vh">
+    <VStack spacing="20px" p="20px" minH="100vh">
       <Heading as="h1" size="lg">
         Orchestra - 指揮者体験システム
       </Heading>
@@ -253,9 +254,8 @@ const PlayingPage = () => {
               onClick={handleStart}
               disabled={isDisabled || isDetecting}
               // 元の button スタイルを再現
-              bg={primaryColor}
+              colorScheme="blue"
               color="white"
-              _hover={{ bg: isDisabled ? disabledColor : "gray.600" }}
               _disabled={{ bg: disabledColor, cursor: "not-allowed" }}
               padding="10px"
               fontSize="16px"
@@ -273,9 +273,8 @@ const PlayingPage = () => {
               id="stopButton"
               onClick={handleStop}
               style={{ display: isDetecting ? "block" : "none" }}
-              bg={primaryColor}
+              colorScheme="blue"
               color="white"
-              _hover={{ bg: "gray.600" }}
               padding="10px"
               fontSize="16px"
               borderRadius="5px"
@@ -336,9 +335,8 @@ const PlayingPage = () => {
           id="retryButton"
           onClick={handleRetry}
           style={{ display: !isAnalyzing && showFeedback ? "block" : "none" }}
-          bg={primaryColor}
+          colorScheme="blue"
           color="white"
-          _hover={{ bg: "gray.600" }}
           padding="10px"
           fontSize="16px"
           borderRadius="5px"
