@@ -1,15 +1,27 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import logo from "@/assets/logo.png";
 import { Text, Box } from "@chakra-ui/react";
 
+const THRESHOLD = 1;
+
 export default function PlayingPage() {
   const document_root = document.getElementById("root");
+  const [msg, setMsg] = useState<string>("")
+  var before_accel = { acc_x: 0, acc_y: 0, acc_z: 0, gyro_x: 0, gyro_y: 0, gyro_z: 0 };
+  var now_beat = 0;
   useEffect(() => {
     const socket = new WebSocket("ws://10.76.190.56"); // 仮
     socket.addEventListener("open", () => {console.log("WS connected!")});
     socket.addEventListener("message", event => {
       const accel_info = JSON.parse(event.data);
-      console.log(accel_info);
+      // const sum_gyro_delta = Math.abs(accel_info.gyro_x - before_accel.gyro_x) + Math.abs(accel_info.gyro_y - before_accel.gyro_y) + Math.abs(accel_info.gyro_z - before_accel.gyro_z);
+      const sum_acc_delta = Math.abs(accel_info.acc_x - before_accel.acc_x) + Math.abs(accel_info.acc_y - before_accel.acc_y) + Math.abs(accel_info.acc_z - before_accel.acc_z);
+      if (sum_acc_delta > THRESHOLD) {
+        now_beat += 1;
+        setMsg("動きが検出されました: " + now_beat);
+      };
+      console.log(sum_acc_delta)
+      before_accel = accel_info;
     });
   }, []);
 
@@ -20,6 +32,7 @@ export default function PlayingPage() {
   return (
     <>
       <div style={{ height: "100%" }}>
+        <p>{msg}</p>
         <Box as="video" height="100%"></Box>
         <Text style={{ position: "fixed", bottom: "5px", left: "5px" }}>
           v0.0.1
