@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Box,
   VStack,
@@ -13,57 +13,8 @@ import {
 } from "@chakra-ui/react";
 import { useVisionController } from "@/hooks/useVisionController";
 import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
-import type { NormalizedLandmarkList } from "@/utils/models"; // 型をインポート
-
-const useCameraSelector = () => {
-  // ... (useCameraSelectorのコードをそのままここに含めるか、外部ファイルからインポートしてください) ...
-  const [cameraDevices, setCameraDevices] = useState<
-    { id: string; label: string }[]
-  >([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(
-    undefined,
-  );
-  const [isCameraReady, setIsCameraReady] = useState(false);
-
-  useEffect(() => {
-    const setup = async () => {
-      try {
-        await navigator.mediaDevices.getUserMedia({ video: true });
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices
-          .filter((d) => d.kind === "videoinput")
-          .map((d, index) => ({
-            id: d.deviceId,
-            label: d.label || `Camera ${index + 1}`,
-          }));
-
-        setCameraDevices(videoDevices);
-        if (videoDevices.length > 0) {
-          setSelectedDeviceId(videoDevices[0].id);
-        }
-        setIsCameraReady(true);
-      } catch (error) {
-        console.error("カメラの列挙に失敗しました:", error);
-        setIsCameraReady(false);
-      }
-    };
-    setup();
-  }, []);
-
-  const handleSelectChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setSelectedDeviceId(e.target.value);
-    },
-    [],
-  );
-
-  return {
-    cameraDevices,
-    selectedDeviceId,
-    isCameraReady,
-    handleSelectChange,
-  };
-};
+import { useCameraSelector } from "@/hooks/useCameraSelector";
+import type { NormalizedLandmarkList } from "@/utils/models";
 
 const PlayingPage = () => {
   useEffect(() => {
@@ -178,14 +129,13 @@ const PlayingPage = () => {
         display={showFeedback ? "none" : "flex"}
         flexDir="column"
         alignItems="center"
-        width="100%"
+        width="55vw"
       >
         {/* 映像エリア (.vision-container) */}
         <Box
           className="vision-container" // 元のCSSと同じように参照できるように className は残す（ただし、Chakraプロパティで上書き）
           position="relative"
           width="100%"
-          maxWidth="640px"
           paddingTop="75%" // 4:3のアスペクト比を再現 (3/4 * 100 = 75)
           bg="black"
           borderRadius="8px"
