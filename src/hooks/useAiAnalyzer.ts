@@ -15,8 +15,8 @@ interface AiAnalyzerResult {
   error: string | null;
 }
 
-const MODEL_URL = "@/predictModel/tfjs_model/model.json";
-const SCALER_URL = "@/predictModel/scaler.json";
+const MODEL_URL = "/predictModel/tfjs_model/model.json";
+const SCALER_URL = "/predictModel/scaler.json";
 
 export const useAiAnalyzer = (): AiAnalyzerResult => {
   const [aiModel, setAiModel] = useState<tf.LayersModel | null>(null);

@@ -1,178 +1,353 @@
-// App.jsx
-import { useEffect, useRef, useState } from "react";
-import "./style.css";
+// src/pages/PlayingPage.tsx (Chakra UI版)
 
-// MediaPipe Visionライブラリ
+import { useRef, useState, useEffect, useCallback } from "react";
 import {
-  PoseLandmarker,
-  FilesetResolver,
-  DrawingUtils,
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js";
+  Box,
+  VStack,
+  HStack,
+  Heading,
+  Select,
+  Button,
+  Text,
+  Spinner,
+  Center,
+  useColorModeValue,
+  chakra,
+} from "@chakra-ui/react";
 
-export default function App() {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const cameraSelectRef = useRef(null);
+// カスタムフックのインポート (パスは環境に合わせて調整してください)
+import { useVisionController } from "@/hooks/useVisionController";
+import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
+import type { NormalizedLandmarkList } from "@/utils/models"; // 型をインポート
 
-  const [poseLandmarker, setPoseLandmarker] = useState(null);
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [poseDataRecorder, setPoseDataRecorder] = useState([]);
-  const [lastVideoTime, setLastVideoTime] = useState(-1);
-  const [feedback, setFeedback] = useState(
-    "準備完了！使用するカメラを選んで「指揮を開始」ボタンを押してください。"
+// --- 1. カメラ選択機能のカスタムフック（再掲、今回は変更なし） ---
+const useCameraSelector = () => {
+  // ... (useCameraSelectorのコードをそのままここに含めるか、外部ファイルからインポートしてください) ...
+  const [cameraDevices, setCameraDevices] = useState<
+    { id: string; label: string }[]
+  >([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(
+    undefined,
   );
-
-  const [startDisabled, setStartDisabled] = useState(true);
-  const [stopDisabled, setStopDisabled] = useState(true);
-
-  // カメラ選択セットアップ
-  async function setupCameraSelector() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter((d) => d.kind === "videoinput");
-    if (videoDevices.length === 0) {
-      alert("カメラが見つかりません。");
-      return;
-    }
-    const select = cameraSelectRef.current;
-    select.innerHTML = "";
-    videoDevices.forEach((device, idx) => {
-      const option = document.createElement("option");
-      option.value = device.deviceId;
-      option.innerText = device.label || `Camera ${idx + 1}`;
-      select.appendChild(option);
-    });
-  }
-
-  // 初期化処理
-  async function initialize() {
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-    );
-    const landmarker = await PoseLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath:
-          "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-        delegate: "GPU",
-      },
-      runningMode: "VIDEO",
-      numPoses: 1,
-    });
-    setPoseLandmarker(landmarker);
-    await setupCameraSelector();
-    setFeedback(
-      "準備完了！使用するカメラを選んで「指揮を開始」ボタンを押してください。"
-    );
-    setStartDisabled(false);
-    console.log("初期化完了");
-  }
-
-  // Webカメラ開始 & 検出開始
-  async function startWebcamAndDetection() {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const select = cameraSelectRef.current;
-
-    const constraints = {
-      video: { deviceId: { exact: select.value } },
-    };
-
-    setIsDetecting(true);
-    setStartDisabled(true);
-    setStopDisabled(false);
-    select.disabled = true;
-    setFeedback("指揮をしてください...");
-    setPoseDataRecorder([]);
-
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = stream;
-    video.onloadeddata = () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      detectionLoop();
-    };
-  }
-
-  // 骨格推定ループ
-  function detectionLoop() {
-    if (!isDetecting || !poseLandmarker) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    const videoTime = video.currentTime;
-    if (videoTime !== lastVideoTime) {
-      setLastVideoTime(videoTime);
-
-      const result = poseLandmarker.detectForVideo(video, performance.now());
-
-      if (result.landmarks && result.landmarks.length > 0) {
-        setPoseDataRecorder((prev) => [...prev, result.landmarks[0]]);
-      }
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const drawingUtils = new DrawingUtils(ctx);
-      for (const landmarks of result.landmarks) {
-        drawingUtils.drawLandmarks(landmarks, { color: "#E1D319", radius: 5 });
-        drawingUtils.drawConnectors(
-          landmarks,
-          PoseLandmarker.POSE_CONNECTIONS,
-          { color: "#4A5E76", lineWidth: 3 }
-        );
-      }
-    }
-
-    requestAnimationFrame(detectionLoop);
-  }
-
-  // 停止処理
-  function stopAndReset() {
-    setIsDetecting(false);
-    setStartDisabled(false);
-    setStopDisabled(true);
-    cameraSelectRef.current.disabled = false;
-    setFeedback("AIからのフィードバック待機中...");
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (video.srcObject) {
-      video.srcObject.getTracks().forEach((t) => t.stop());
-      video.srcObject = null;
-    }
-    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-  }
+  const [isCameraReady, setIsCameraReady] = useState(false);
 
   useEffect(() => {
-    initialize();
+    const setup = async () => {
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices
+          .filter((d) => d.kind === "videoinput")
+          .map((d, index) => ({
+            id: d.deviceId,
+            label: d.label || `Camera ${index + 1}`,
+          }));
+
+        setCameraDevices(videoDevices);
+        if (videoDevices.length > 0) {
+          setSelectedDeviceId(videoDevices[0].id);
+        }
+        setIsCameraReady(true);
+      } catch (error) {
+        console.error("カメラの列挙に失敗しました:", error);
+        setIsCameraReady(false);
+      }
+    };
+    setup();
   }, []);
 
-  return (
-    <div>
-      <h1>Orchestra - 指揮者体験システム</h1>
-
-      <div className="vision-container">
-        <video ref={videoRef} autoPlay playsInline muted />
-        <canvas ref={canvasRef}></canvas>
-      </div>
-
-      <div className="controls">
-        <select ref={cameraSelectRef}></select>
-        <button onClick={startWebcamAndDetection} disabled={startDisabled}>
-          指揮を開始
-        </button>
-        <button onClick={stopAndReset} disabled={stopDisabled}>
-          評価を実行
-        </button>
-      </div>
-
-      <div className="feedback-container">
-        <h2>AIによるフィードバック</h2>
-        <div id="feedbackResult">{feedback}</div>
-        <button onClick={initialize}>もう一度試す</button>
-      </div>
-    </div>
+  const handleSelectChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setSelectedDeviceId(e.target.value);
+    },
+    [],
   );
-}
+
+  return {
+    cameraDevices,
+    selectedDeviceId,
+    isCameraReady,
+    handleSelectChange,
+  };
+};
+
+const PlayingPage = () => {
+  // 参照 (DOM要素)
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // 状態
+  const [feedbackText, setFeedbackText] = useState<string>("");
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [showFeedback, setShowFeedback] = useState<boolean>(false);
+
+  // カスタムフック
+  const { cameraDevices, selectedDeviceId, isCameraReady, handleSelectChange } =
+    useCameraSelector();
+  const {
+    isDetecting,
+    isLoading: isVisionLoading,
+    error: visionError,
+    startDetection,
+    stopDetection,
+  } = useVisionController(videoRef.current, canvasRef.current);
+  const {
+    analyze: runAiAnalysis,
+    isLoading: isAiLoading,
+    error: aiError,
+  } = useAiAnalyzer();
+
+  const isReady =
+    isCameraReady &&
+    !isVisionLoading &&
+    !isAiLoading &&
+    !visionError &&
+    !aiError;
+  const isDisabled = !isReady || !selectedDeviceId;
+
+  // スタイル
+  const bgColor = useColorModeValue("#f0f2f5", "gray.900"); // bodyの背景色
+  const primaryColor = "#4A5E76"; // ボタンの背景色
+  const disabledColor = "#A9A9A9"; // ボタンの無効色
+
+  const handleStart = async () => {
+    if (isDisabled || isDetecting || !selectedDeviceId) return;
+
+    setShowFeedback(false);
+    setFeedbackText("");
+
+    await startDetection(selectedDeviceId);
+  };
+
+  const handleStop = async () => {
+    if (!isDetecting) return;
+
+    const poseData: NormalizedLandmarkList[] = stopDetection();
+
+    setShowFeedback(true);
+    setIsAnalyzing(true);
+    setFeedbackText("");
+
+    try {
+      const result = await runAiAnalysis(poseData);
+      setFeedbackText(result);
+    } catch (error) {
+      console.error("AI分析中にエラーが発生しました:", error);
+      setFeedbackText("AI分析中に致命的なエラーが発生しました。");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setShowFeedback(false);
+    setFeedbackText("");
+  };
+
+  // --- エラー/ロード状態の表示 ---
+  const renderStatus = () => {
+    if (visionError || aiError) {
+      return (
+        <Text color="red.500">
+          エラーが発生しました: {visionError || aiError}
+        </Text>
+      );
+    }
+    if (isVisionLoading || isAiLoading) {
+      // ローディングインジケータをボタンエリアに表示
+      return <Text color="gray.500">AI/検出システムを準備中...</Text>;
+    }
+    if (!isCameraReady) {
+      return <Text color="gray.500">カメラアクセスを待機中...</Text>;
+    }
+    return null;
+  };
+
+  // --- レンダリング ---
+  return (
+    // bodyのスタイルをVStackとBoxで再現
+    <VStack spacing="20px" p="20px" bg={bgColor} minH="100vh">
+      <Heading as="h1" size="lg">
+        Orchestra - 指揮者体験システム
+      </Heading>
+
+      {/* ===== 指揮画面 ===== */}
+      <Box
+        id="conducting-screen"
+        display={showFeedback ? "none" : "flex"}
+        flexDir="column"
+        alignItems="center"
+        width="100%"
+      >
+        {/* 映像エリア (.vision-container) */}
+        <Box
+          className="vision-container" // 元のCSSと同じように参照できるように className は残す（ただし、Chakraプロパティで上書き）
+          position="relative"
+          width="100%"
+          maxWidth="640px"
+          paddingTop="75%" // 4:3のアスペクト比を再現 (3/4 * 100 = 75)
+          bg="black"
+          borderRadius="8px"
+        >
+          {/* video, canvas (position: absolute, width/height: 100%を再現) */}
+          <chakra.video
+            id="webcam"
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            position="absolute"
+            top="0"
+            left="0"
+            width="100%"
+            height="100%"
+            borderRadius="8px"
+          />
+          <chakra.canvas
+            id="overlayCanvas"
+            ref={canvasRef}
+            position="absolute"
+            top="0"
+            left="0"
+            width="100%"
+            height="100%"
+            borderRadius="8px"
+            bg="transparent"
+          />
+        </Box>
+
+        {/* 操作エリア (.controls) */}
+        <VStack spacing={2} mt={4} width="100%" maxWidth="640px">
+          {renderStatus()}
+
+          <HStack
+            spacing="10px"
+            className="controls"
+            width="100%"
+            justifyContent="center"
+          >
+            <Select
+              id="cameraSelect"
+              title="使用するカメラを選択"
+              onChange={handleSelectChange}
+              value={selectedDeviceId || ""}
+              disabled={isDetecting || !isCameraReady}
+              // 元の select スタイルを再現
+              padding="10px"
+              fontSize="16px"
+              borderRadius="5px"
+              border="1px solid"
+              borderColor="gray.300"
+              width={{ base: "100%", sm: "auto" }}
+            >
+              {cameraDevices.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.label}
+                </option>
+              ))}
+            </Select>
+
+            {/* 開始ボタン */}
+            <Button
+              id="startButton"
+              onClick={handleStart}
+              disabled={isDisabled || isDetecting}
+              // 元の button スタイルを再現
+              bg={primaryColor}
+              color="white"
+              _hover={{ bg: isDisabled ? disabledColor : "gray.600" }}
+              _disabled={{ bg: disabledColor, cursor: "not-allowed" }}
+              padding="10px"
+              fontSize="16px"
+              borderRadius="5px"
+            >
+              {isDetecting
+                ? "指揮中..."
+                : isDisabled
+                  ? "準備中..."
+                  : "指揮を開始"}
+            </Button>
+
+            {/* 停止ボタン (isDetecting時のみ表示) */}
+            <Button
+              id="stopButton"
+              onClick={handleStop}
+              style={{ display: isDetecting ? "block" : "none" }}
+              bg={primaryColor}
+              color="white"
+              _hover={{ bg: "gray.600" }}
+              padding="10px"
+              fontSize="16px"
+              borderRadius="5px"
+            >
+              指揮を終了
+            </Button>
+          </HStack>
+        </VStack>
+      </Box>
+
+      {/* ===== フィードバック画面 ===== */}
+      <VStack
+        id="feedback-screen"
+        display={showFeedback ? "flex" : "none"}
+        width="100%"
+        maxWidth="640px"
+        spacing={4}
+      >
+        <Heading as="h2" size="md">
+          AIによるフィードバック
+        </Heading>
+
+        {/* ローディングスピナー (.loader) の再現 */}
+        {isAnalyzing && (
+          <Center w="full" py={4} flexDirection="column">
+            {/* 元のCSSに近い色のChakra Spinnerを使用 */}
+            <Spinner
+              thickness="4px"
+              speed="1s"
+              emptyColor="gray.200"
+              color={primaryColor} // #4A5E76
+              size="xl"
+            />
+            <Text mt={2}>分析中...</Text>
+          </Center>
+        )}
+
+        {/* フィードバック結果 (#feedbackResult) の再現 */}
+        <Box
+          id="feedbackResult"
+          padding="1.5em"
+          bg="white"
+          borderRadius="8px"
+          minHeight="100px"
+          textAlign="center"
+          width="100%"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Text fontSize="lg" fontWeight="bold">
+            {!isAnalyzing ? feedbackText : ""}
+          </Text>
+        </Box>
+
+        {/* もう一度試すボタン */}
+        <Button
+          id="retryButton"
+          onClick={handleRetry}
+          style={{ display: !isAnalyzing && showFeedback ? "block" : "none" }}
+          bg={primaryColor}
+          color="white"
+          _hover={{ bg: "gray.600" }}
+          padding="10px"
+          fontSize="16px"
+          borderRadius="5px"
+        >
+          もう一度試す
+        </Button>
+      </VStack>
+    </VStack>
+  );
+};
+
+export default PlayingPage;
