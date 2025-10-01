@@ -50,7 +50,8 @@ export const useAiAnalyzer = (): AiAnalyzerResult => {
         aiModel.dispose();
       }
     };
-  }, [aiModel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const analyze = useCallback(
     async (fullPoseData: NormalizedLandmarkList[]): Promise<string> => {
