@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   PoseLandmarker,
   FilesetResolver,
-  DrawingUtils,
 } from "@mediapipe/tasks-vision";
 import type { PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 import type {
@@ -78,11 +77,7 @@ export const useVisionController = (
   }, [videoElement]);
 
   const detectionLoop = useCallback(() => {
-    if (
-      !isDetectingRef.current ||
-      !videoElement ||
-      !poseLandmarkerRef.current
-    )
+    if (!isDetectingRef.current || !videoElement || !poseLandmarkerRef.current)
       return;
 
     const poseResult: PoseLandmarkerResult =
