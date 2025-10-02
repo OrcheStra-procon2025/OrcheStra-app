@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
-import { useGLTF } from "@react-three/drei";
+import { OrthographicCamera, useGLTF } from "@react-three/drei";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils";
 import { Object3D } from "three";
 
@@ -89,7 +89,11 @@ const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
       ...prev,
       {
         id: Date.now() + Math.random(),
-        position: [x / 100, -y / 100, 0],
+        position: [
+          (x * 3.796875 * 2) / window.innerHeight,
+          -(y * 3.796875 * 2) / window.innerHeight,
+          0,
+        ],
       },
     ]);
     return;
@@ -108,12 +112,17 @@ const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
         top: "0px",
         left: "0px",
       }}
-      camera={{
-        fov: 45,
-        position: [0, 0, 10],
-      }}
       shadows={true}
     >
+      <OrthographicCamera
+        position={[0, 0, 1000]}
+        left={0}
+        right={window.innerWidth}
+        top={window.innerHeight}
+        bottom={0}
+        near={-100}
+        far={100}
+      />
       <directionalLight position={[1, 1, 1]} intensity={2} />
 
       {components.map(({ id, position }) => (
