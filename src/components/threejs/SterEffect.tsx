@@ -31,9 +31,9 @@ export const StarEffect = ({ id, position, url, onDelete }: Props) => {
 
   useEffect(() => {
     randomPosition.current = position;
-    randomPosition.current[0] += rand(-0.1, 0.1);
-    randomPosition.current[1] += rand(-0.1, 0.1);
-    randomPosition.current[2] += rand(-0.1, 0.1);
+    randomPosition.current[0] += rand(-0.3, 0.3);
+    randomPosition.current[1] += rand(-0.3, 0.3);
+    randomPosition.current[2] += rand(-0.3, 0.3);
 
     createdAtRef.current = performance.now();
     clonedSceneRef.current = clone(scene);
