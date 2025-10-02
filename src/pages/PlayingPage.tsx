@@ -14,6 +14,7 @@ import {
 import { useVisionController } from "@/hooks/useVisionController";
 import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
+import { useMusicPlayer } from "@/hooks/useMusicPlayer";
 import type { NormalizedLandmarkList } from "@/utils/models";
 
 const PlayingPage = () => {
@@ -27,6 +28,7 @@ const PlayingPage = () => {
       console.log(accel_info);
     });
   }, []);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -34,8 +36,10 @@ const PlayingPage = () => {
   const [feedbackText, setFeedbackText] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
+  const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate
 
   // カスタムフック
+  const { isPlayerReady, playMusic, stopMusic } = useMusicPlayer();
   const { cameraDevices, selectedDeviceId, isCameraReady, handleSelectChange } =
     useCameraSelector();
   const {
@@ -52,28 +56,47 @@ const PlayingPage = () => {
   } = useAiAnalyzer();
 
   const isReady =
+    isPlayerReady &&
     isCameraReady &&
     !isVisionLoading &&
     !isAiLoading &&
     !visionError &&
     !aiError;
   const isDisabled = !isReady || !selectedDeviceId;
+  const isCountingDown = countdown !== null;
 
   const primaryColor = "skyblue";
-  const disabledColor = "#A9A9A9"; // ボタンの無効色
+  const disabledColor = "#A9A9A9";
 
   const handleStart = async () => {
-    if (isDisabled || isDetecting || !selectedDeviceId) return;
+    if (isDisabled || isDetecting || isCountingDown) return;
 
     setShowFeedback(false);
     setFeedbackText("");
 
+    // 3秒のカウントダウン処理
+    await new Promise<void>((resolve) => {
+      setCountdown(3);
+      const interval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev === null || prev <= 1) {
+            clearInterval(interval);
+            resolve();
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    });
+
+    // カウントダウン後に検出と音楽再生を開始
     await startDetection(selectedDeviceId);
+    await playMusic();
   };
 
   const handleStop = async () => {
     if (!isDetecting) return;
-
+    stopMusic();
     const poseData: NormalizedLandmarkList[] = stopDetection();
 
     setShowFeedback(true);
@@ -96,7 +119,6 @@ const PlayingPage = () => {
     setFeedbackText("");
   };
 
-  // --- エラー/ロード状態の表示 ---
   const renderStatus = () => {
     if (visionError || aiError) {
       return (
@@ -106,24 +128,30 @@ const PlayingPage = () => {
       );
     }
     if (isVisionLoading || isAiLoading) {
-      // ローディングインジケータをボタンエリアに表示
       return <Text color="gray.500">AI/検出システムを準備中...</Text>;
     }
     if (!isCameraReady) {
       return <Text color="gray.500">カメラアクセスを待機中...</Text>;
     }
+    if (!isPlayerReady) {
+      return <Text color="gray.500">音楽ファイルを読み込み中...</Text>;
+    }
     return null;
   };
 
-  // --- レンダリング ---
+  const getButtonText = () => {
+    if (isDetecting) return "指揮中...";
+    if (isCountingDown) return "開始...";
+    if (isDisabled) return "準備中...";
+    return "指揮を開始";
+  };
+
   return (
-    // bodyのスタイルをVStackとBoxで再現
     <VStack spacing="20px" p="20px" minH="100vh">
       <Heading as="h1" size="lg">
         Orchestra - 指揮者体験システム
       </Heading>
 
-      {/* ===== 指揮画面 ===== */}
       <Box
         id="conducting-screen"
         display={showFeedback ? "none" : "flex"}
@@ -131,16 +159,31 @@ const PlayingPage = () => {
         alignItems="center"
         width="55vw"
       >
-        {/* 映像エリア (.vision-container) */}
         <Box
-          className="vision-container" // 元のCSSと同じように参照できるように className は残す（ただし、Chakraプロパティで上書き）
           position="relative"
           width="100%"
-          paddingTop="75%" // 4:3のアスペクト比を再現 (3/4 * 100 = 75)
+          paddingTop="75%"
           bg="black"
           borderRadius="8px"
         >
-          {/* video, canvas (position: absolute, width/height: 100%を再現) */}
+          {/* カウントダウン表示UI */}
+          {isCountingDown && (
+            <Center
+              position="absolute"
+              top="0"
+              left="0"
+              width="100%"
+              height="100%"
+              bg="rgba(0, 0, 0, 0.5)"
+              zIndex="10"
+              borderRadius="8px"
+            >
+              <Text fontSize="9xl" color="white" fontWeight="bold">
+                {countdown}
+              </Text>
+            </Center>
+          )}
+
           <chakra.video
             id="webcam"
             ref={videoRef}
@@ -167,23 +210,15 @@ const PlayingPage = () => {
           />
         </Box>
 
-        {/* 操作エリア (.controls) */}
         <VStack spacing={2} mt={4} width="100%" maxWidth="640px">
           {renderStatus()}
-
-          <HStack
-            spacing="10px"
-            className="controls"
-            width="100%"
-            justifyContent="center"
-          >
+          <HStack spacing="10px" width="100%" justifyContent="center">
             <Select
               id="cameraSelect"
               title="使用するカメラを選択"
               onChange={handleSelectChange}
               value={selectedDeviceId || ""}
-              disabled={isDetecting || !isCameraReady}
-              // 元の select スタイルを再現
+              disabled={isDetecting || !isCameraReady || isCountingDown}
               padding="10px"
               fontSize="16px"
               borderRadius="5px"
@@ -197,13 +232,10 @@ const PlayingPage = () => {
                 </option>
               ))}
             </Select>
-
-            {/* 開始ボタン */}
             <Button
               id="startButton"
               onClick={handleStart}
-              disabled={isDisabled || isDetecting}
-              // 元の button スタイルを再現
+              disabled={isDisabled || isDetecting || isCountingDown}
               colorScheme="blue"
               color="white"
               _disabled={{ bg: disabledColor, cursor: "not-allowed" }}
@@ -211,14 +243,8 @@ const PlayingPage = () => {
               fontSize="16px"
               borderRadius="5px"
             >
-              {isDetecting
-                ? "指揮中..."
-                : isDisabled
-                  ? "準備中..."
-                  : "指揮を開始"}
+              {getButtonText()}
             </Button>
-
-            {/* 停止ボタン (isDetecting時のみ表示) */}
             <Button
               id="stopButton"
               onClick={handleStop}
@@ -246,23 +272,18 @@ const PlayingPage = () => {
         <Heading as="h2" size="md">
           AIによるフィードバック
         </Heading>
-
-        {/* ローディングスピナー (.loader) の再現 */}
         {isAnalyzing && (
           <Center w="full" py={4} flexDirection="column">
-            {/* 元のCSSに近い色のChakra Spinnerを使用 */}
             <Spinner
               thickness="4px"
               speed="1s"
               emptyColor="gray.200"
-              color={primaryColor} // #4A5E76
+              color={primaryColor}
               size="xl"
             />
             <Text mt={2}>分析中...</Text>
           </Center>
         )}
-
-        {/* フィードバック結果 (#feedbackResult) の再現 */}
         <Box
           id="feedbackResult"
           padding="1.5em"
@@ -279,8 +300,6 @@ const PlayingPage = () => {
             {!isAnalyzing ? feedbackText : ""}
           </Text>
         </Box>
-
-        {/* もう一度試すボタン */}
         <Button
           id="retryButton"
           onClick={handleRetry}
