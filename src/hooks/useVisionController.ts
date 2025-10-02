@@ -27,7 +27,6 @@ const WASM_PATH =
 
 export const useVisionController = (
   videoElement: HTMLVideoElement | null,
-  canvasElement: HTMLCanvasElement | null,
 ): VisionController => {
   // 状態管理
   const isDetectingRef = useRef<boolean>(false);
@@ -49,7 +48,7 @@ export const useVisionController = (
   // ------------------------------------------------
 
   useEffect(() => {
-    if (!canvasElement || !videoElement) return;
+    if (!videoElement) return;
 
     const loadLandmarker = async () => {
       try {
@@ -76,24 +75,16 @@ export const useVisionController = (
         poseLandmarkerRef.current.close();
       }
     };
-  }, [canvasElement, videoElement]);
+  }, [videoElement]);
 
   const detectionLoop = useCallback(() => {
     if (
       !isDetectingRef.current ||
       !videoElement ||
-      !canvasElement ||
       !poseLandmarkerRef.current
     )
       return;
-    if (!canvasElement) return;
 
-    const canvasCtx = canvasElement.getContext("2d");
-    if (!canvasCtx) return;
-
-    // 検出処理
-    canvasElement.width = videoElement.videoWidth;
-    canvasElement.height = videoElement.videoHeight;
     const poseResult: PoseLandmarkerResult =
       poseLandmarkerRef.current.detectForVideo(videoElement, performance.now());
 
@@ -113,23 +104,12 @@ export const useVisionController = (
       }
     }
 
-    // 描画処理
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    const drawingUtils = new DrawingUtils(canvasCtx);
-    for (const landmarks of poseResult.landmarks) {
-      drawingUtils.drawLandmarks(landmarks, { color: "#E1D319", radius: 5 });
-      drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-        color: "#4A5E76",
-        lineWidth: 3,
-      });
-    }
-
     window.requestAnimationFrame(detectionLoop);
-  }, [videoElement, canvasElement]);
+  }, [videoElement]);
 
   const startDetection = useCallback(
     async (deviceId: string) => {
-      if (isLoading || error || !videoElement || !canvasElement) return;
+      if (isLoading || error || !videoElement) return;
 
       try {
         // カメラ開始
@@ -162,7 +142,7 @@ export const useVisionController = (
         setIsDetectingState(false);
       }
     },
-    [isLoading, error, videoElement, canvasElement, detectionLoop],
+    [isLoading, error, videoElement, detectionLoop],
   );
 
   const stopDetection = useCallback((): NormalizedLandmarkList[] => {

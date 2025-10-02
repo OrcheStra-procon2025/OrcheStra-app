@@ -34,7 +34,6 @@ const PlayingPage = () => {
   }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // 状態
   const [feedbackText, setFeedbackText] = useState<string>("");
@@ -54,7 +53,7 @@ const PlayingPage = () => {
     stopDetection,
     rightWrist,
     leftWrist,
-  } = useVisionController(videoRef.current, canvasRef.current);
+  } = useVisionController(videoRef.current);
   const {
     analyze: runAiAnalysis,
     isLoading: isAiLoading,
@@ -228,17 +227,6 @@ const PlayingPage = () => {
             width="100%"
             height="100%"
             borderRadius="8px"
-          />
-          <chakra.canvas
-            id="overlayCanvas"
-            ref={canvasRef}
-            position="absolute"
-            top="0"
-            left="0"
-            width="100%"
-            height="100%"
-            borderRadius="8px"
-            bg="transparent"
           />
           {isDetecting && rightWristX !== 0 && rightWristY !== 0 && (
             <ThreejsEffect x={rightWristX} y={rightWristX} />
