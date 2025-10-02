@@ -5,19 +5,20 @@ import {
   DrawingUtils,
 } from "@mediapipe/tasks-vision";
 import type { PoseLandmarkerResult } from "@mediapipe/tasks-vision";
-import type { NormalizedLandmarkList } from "@/utils/models";
+import type {
+  NormalizedLandmarkList,
+  NormalizedLandmark,
+} from "@/utils/models";
+import { KEY_JOINTS_MEDIAPIPE } from "@/utils/mediapipeJoint";
 
 interface VisionController {
-  /** 骨格検出が有効かどうか */
   isDetecting: boolean;
-  /** MediaPipeとカメラのロード状態 */
   isLoading: boolean;
-  /** エラーメッセージ */
   error: string | null;
-  /** 検出を開始し、ポーズデータの記録を開始する */
   startDetection: (deviceId: string) => Promise<void>;
-  /** 検出を停止し、記録されたポーズデータを返す */
   stopDetection: () => NormalizedLandmarkList[];
+  rightWrist: NormalizedLandmark | null;
+  leftWrist: NormalizedLandmark | null;
 }
 
 const MODEL_PATH = `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`;
@@ -36,6 +37,8 @@ export const useVisionController = (
   const [poseDataRecorder, setPoseDataRecorder] = useState<
     NormalizedLandmarkList[]
   >([]);
+  const [rightWrist, setRightWrist] = useState<NormalizedLandmark | null>(null);
+  const [leftWrist, setLeftWrist] = useState<NormalizedLandmark | null>(null);
 
   // 内部インスタンス管理
   const poseLandmarkerRef = useRef<PoseLandmarker | null>(null);
@@ -96,10 +99,18 @@ export const useVisionController = (
 
     // データ記録
     if (poseResult.landmarks.length > 0) {
-      setPoseDataRecorder((prevData) => [
-        ...prevData,
-        poseResult.landmarks[0] as NormalizedLandmarkList,
-      ]);
+      const currentLandmarks = poseResult
+        .landmarks[0] as NormalizedLandmarkList;
+      setPoseDataRecorder((prevData) => [...prevData, currentLandmarks]);
+
+      const rightWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST];
+      const leftWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
+      if (rightWrist) {
+        setRightWrist(rightWrist);
+      }
+      if (leftWrist) {
+        setLeftWrist(leftWrist);
+      }
     }
 
     // 描画処理
@@ -180,5 +191,7 @@ export const useVisionController = (
     error,
     startDetection,
     stopDetection,
+    rightWrist,
+    leftWrist,
   };
 };

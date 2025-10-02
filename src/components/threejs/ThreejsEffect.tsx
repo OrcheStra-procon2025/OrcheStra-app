@@ -4,7 +4,7 @@ import { OrthographicCamera } from "@react-three/drei";
 import { StarEffect } from "./SterEffect";
 
 
-const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
+export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
   const [components, setComponents] = useState<
     { id: number; position: [number, number, number] }[]
   >([]);
@@ -31,8 +31,8 @@ const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
   return (
     <Canvas
       style={{
-        width: "100vw",
-        height: "100vh",
+        width: "100%",
+        height: "100%",
         position: "absolute",
         top: "0px",
         left: "0px",
@@ -63,4 +63,3 @@ const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
   );
 };
 
-export default ThreejsEffect;
