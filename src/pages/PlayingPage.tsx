@@ -212,11 +212,7 @@ const PlayingPage = () => {
 
         <VStack spacing={2} mt={4} width="100%" maxWidth="640px">
           {renderStatus()}
-          <HStack
-            spacing="10px"
-            width="100%"
-            justifyContent="center"
-          >
+          <HStack spacing="10px" width="100%" justifyContent="center">
             <Select
               id="cameraSelect"
               title="使用するカメラを選択"

@@ -8,7 +8,7 @@ interface MusicPlayer {
 }
 
 // publicフォルダに配置する音楽ファイルのパス
-const MUSIC_FILE_URL = "/music/Carmen.mp3"; 
+const MUSIC_FILE_URL = "/music/Carmen.mp3";
 
 export const useMusicPlayer = (): MusicPlayer => {
   const playerRef = useRef<Tone.Player | null>(null);
@@ -25,15 +25,18 @@ export const useMusicPlayer = (): MusicPlayer => {
             setIsPlayerReady(true);
           },
           onerror: (error) => {
-            console.error("音楽ファイルのロード中にエラーが発生しました:", error);
+            console.error(
+              "音楽ファイルのロード中にエラーが発生しました:",
+              error,
+            );
           },
         }).toDestination();
         playerRef.current = player;
       } catch (error) {
-         console.error("Tone.Playerの作成に失敗しました:", error);
+        console.error("Tone.Playerの作成に失敗しました:", error);
       }
     };
-    
+
     setupPlayer();
 
     // コンポーネントのアンマウント時にプレイヤーを破棄
@@ -47,7 +50,7 @@ export const useMusicPlayer = (): MusicPlayer => {
     if (Tone.context.state !== "running") {
       await Tone.start();
     }
-    
+
     if (playerRef.current && isPlayerReady) {
       playerRef.current.start();
     }
