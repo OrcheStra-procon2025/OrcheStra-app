@@ -1,0 +1,6 @@
+export const KEY_JOINTS_MEDIAPIPE = {
+  RIGHT_WRIST: 16,
+  LEFT_WRIST: 15,
+  RIGHT_ELBOW: 14,
+  LEFT_ELBOW: 13,
+};
