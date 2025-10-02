@@ -32,7 +32,7 @@ const SelectionPage = () => {
           一覧から選ぶ
         </Heading>
         <SelectTableMusicList
-          onSelect={handleSelectMusic}
+          setSelectedPath={handleSelectMusic}
           currentSelectedPath={selectedPath}
         />
         <Link href="/play" about="_blank">
