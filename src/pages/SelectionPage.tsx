@@ -1,19 +1,22 @@
 import logo from "@/assets/logo.png";
-import { useState } from "react";
-import { Flex, Box, Link, Button, Heading, Image } from "@chakra-ui/react";
+import { Flex, Box, Button, Heading, Image } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { SelectTableMusicList } from "@/components/SelectTableMusicList";
+import { useGlobalParams } from "@/context/useGlobalParams";
+import { useNavigate } from "react-router-dom";
 
 const SelectionPage = () => {
-  const [selectedPath, setSelectedPath] = useState<string>("");
+  const { selectedMusic } = useGlobalParams();
+  const isStartButtonDisabled = !selectedMusic;
+  const navigate = useNavigate();
 
-  // ★ SelectTableMusicListから呼び出される、パスを更新する関数
-  const handleSelectMusic = (path: string) => {
-    setSelectedPath(path);
+  const handleStartClick = () => {
+    if (!isStartButtonDisabled) {
+      navigate("/play");
+    }
   };
 
-  const isStartButtonDisabled = !selectedPath;
   return (
     <>
       <Flex direction="column" align="center" width="100%" padding="6">
@@ -31,20 +34,16 @@ const SelectionPage = () => {
         <Heading as="h3" fontWeight="normal" size="lg" marginBottom="10px;">
           一覧から選ぶ
         </Heading>
-        <SelectTableMusicList
-          setSelectedPath={handleSelectMusic}
-          currentSelectedPath={selectedPath}
-        />
-        <Link href="/play" about="_blank">
-          <Button
-            colorScheme="blue"
-            marginTop="20px"
-            isDisabled={isStartButtonDisabled}
-          >
-            <FontAwesomeIcon icon={faPlay} style={{ marginRight: "10px" }} />
-            スタート！
-          </Button>
-        </Link>
+        <SelectTableMusicList />
+        <Button
+          colorScheme="blue"
+          marginTop="20px"
+          isDisabled={isStartButtonDisabled}
+          onClick={handleStartClick}
+        >
+          <FontAwesomeIcon icon={faPlay} style={{ marginRight: "10px" }} />
+          スタート！
+        </Button>
       </Flex>
     </>
   );

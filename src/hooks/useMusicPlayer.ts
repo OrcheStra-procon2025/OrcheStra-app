@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import * as Tone from "tone";
+import { useGlobalParams } from "@/context/useGlobalParams";
 
 interface MusicPlayer {
   isPlayerReady: boolean;
@@ -7,10 +8,8 @@ interface MusicPlayer {
   stopMusic: () => void;
 }
 
-// publicフォルダに配置する音楽ファイルのパス
-const MUSIC_FILE_URL = "/music/Carmen.mp3";
-
 export const useMusicPlayer = (): MusicPlayer => {
+  const { selectedMusic } = useGlobalParams();
   const playerRef = useRef<Tone.Player | null>(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
@@ -19,7 +18,7 @@ export const useMusicPlayer = (): MusicPlayer => {
     const setupPlayer = () => {
       try {
         const player = new Tone.Player({
-          url: MUSIC_FILE_URL,
+          url: selectedMusic?.path || "",
           onload: () => {
             console.log("音楽ファイルのロードが完了しました。");
             setIsPlayerReady(true);
@@ -43,6 +42,7 @@ export const useMusicPlayer = (): MusicPlayer => {
     return () => {
       playerRef.current?.dispose();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const playMusic = async () => {

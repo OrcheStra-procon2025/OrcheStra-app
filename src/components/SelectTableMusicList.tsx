@@ -1,38 +1,37 @@
 import { Flex, Text, Box } from "@chakra-ui/react";
 import { selectableMusic } from "@/utils/selectableMusic";
+import type { MusicDataModel } from "@/utils/models";
+import { useGlobalParams } from "@/context/useGlobalParams";
 
-export const SelectTableMusicList = ({
-  setSelectedPath,
-  currentSelectedPath,
-}: {
-  setSelectedPath: (path: string) => void;
-  currentSelectedPath: string;
-}) => {
-  const handleSelect = (musicPath: string) => {
-    setSelectedPath(musicPath);
+export const SelectTableMusicList = () => {
+  const { selectedMusic, updateSelectedMusic } = useGlobalParams();
+
+  const handleSelect = (music: MusicDataModel) => {
+    console.log(music);
+    updateSelectedMusic(music);
   };
 
   return (
     <>
       <Flex gap="25px" flexWrap="wrap">
-        {selectableMusic.map((music) => (
+        {selectableMusic.map((music: MusicDataModel) => (
           <Box // ← ここから JSX を記述
             key={music.id}
-            bg={currentSelectedPath === music.path ? "blue.100" : "gray.200"}
+            bg={selectedMusic?.id === music.id ? "blue.100" : "gray.200"}
             p="4"
             borderRadius="md"
             minWidth="200px"
             cursor="pointer"
-            border={currentSelectedPath === music.path ? "2px solid" : "none"}
+            border={selectedMusic?.id === music.id ? "2px solid" : "none"}
             borderColor={
-              currentSelectedPath === music.path ? "blue.500" : "transparent"
+              selectedMusic?.id === music.id ? "blue.500" : "transparent"
             }
             transition="all 0.2s"
             _hover={{
               opacity: 0.8,
-              boxShadow: currentSelectedPath === music.path ? "lg" : "md",
+              boxShadow: selectedMusic?.id === music.id ? "lg" : "md",
             }}
-            onClick={() => handleSelect(music.path)}
+            onClick={() => handleSelect(music)}
           >
             <Text fontSize="2xl">{music.title}</Text>
             <Box as="span" style={{ textAlign: "right" }}>

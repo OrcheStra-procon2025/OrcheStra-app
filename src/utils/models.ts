@@ -12,4 +12,16 @@ type ScalerInfoModel = {
   scale: number[];
 };
 
-export type { NormalizedLandmark, NormalizedLandmarkList, ScalerInfoModel };
+type MusicDataModel = {
+  id: number;
+  title: string;
+  artist: string;
+  path: string;
+};
+
+export type {
+  NormalizedLandmark,
+  NormalizedLandmarkList,
+  ScalerInfoModel,
+  MusicDataModel,
+};
