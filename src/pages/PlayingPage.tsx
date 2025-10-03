@@ -31,29 +31,59 @@ export default function PlayingPage() {
     let now_beat = 0;
     let beat_strong = 0;
     let after_beat = 0;
+    
+    // 加速度のキュー処理
+    const beatQueue: number[] = [];
+    let isProcessing = false;
+
+    const processBeatQueue = async () => {
+      if (isProcessing || beatQueue.length === 0) {
+        return;
+      }
+      
+      isProcessing = true;
+      
+      while (beatQueue.length > 0) {
+        const currentBeatStrong = beatQueue.shift()!;
+        
+        after_beat += 1;
+        if (after_beat > 6) {
+          now_beat += 1;
+          setMsg("動きが検出されました: " + now_beat + ", " + currentBeatStrong);
+          beat_strong = 0;
+          after_beat = 0;
+        }
+        
+        // 他の処理がブロックされないよう、少し待機
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+      
+      isProcessing = false;
+    };
+
     socket.addEventListener("open", () => {
       console.log("WS connected!");
     });
+    
     socket.addEventListener("message", event => {
       const accel_info = JSON.parse(event.data);
       // const sum_gyro_delta = Math.abs(accel_info.gyro_x - before_accel.gyro_x) + Math.abs(accel_info.gyro_y - before_accel.gyro_y) + Math.abs(accel_info.gyro_z - before_accel.gyro_z);
       const sum_acc_delta = Math.abs(accel_info.acc_x - before_accel.acc_x) + Math.abs(accel_info.acc_y - before_accel.acc_y) + Math.abs(accel_info.acc_z - before_accel.acc_z);
+      
       if (sum_acc_delta > THRESHOLD) {
         beat_strong += sum_acc_delta;
       } else {
         if (beat_strong > 0) {
-          after_beat += 1;
-          if (after_beat > 6) {
-            now_beat += 1;
-            setMsg("動きが検出されました: " + now_beat + ", " + beat_strong);
-            beat_strong = 0;
-            after_beat = 0;
-          }
+          beatQueue.push(beat_strong);
+          processBeatQueue();
         }
-      };
-      console.log(sum_acc_delta)
+      }
       before_accel = accel_info;
     });
+
+    return () => {
+      socket.close();
+    };
   }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
