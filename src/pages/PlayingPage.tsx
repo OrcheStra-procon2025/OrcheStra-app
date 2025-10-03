@@ -25,6 +25,25 @@ const THRESHOLD = 1.2;
 
 export default function PlayingPage() {
   const [msg, setMsg] = useState("準備中");
+  var beatIntervals: Array<number> = []; // 単位: ms
+  var lastBeat: Date|null = null;
+
+  function onBeatDetected(beatStrong: number) {
+    // ビートが検出されたときの処理
+    console.log("拍が検出されました: " + beatStrong);
+    const now = new Date();
+    if (lastBeat) {
+      beatIntervals.push(now.getTime() - lastBeat.getTime());
+    }
+    if (beatIntervals.length > 4) {
+      beatIntervals.shift();
+    }
+    const averageInterval = beatIntervals.reduce((prev, curr) => prev + curr, 0) / beatIntervals.length;
+    setMsg("拍が検出されました: " + beatStrong + ", BPM: " + 60 / (averageInterval / 1000));
+    console.log(beatIntervals)
+    lastBeat = now;
+  };
+
   useEffect(() => {
     const socket = new WebSocket("ws://10.71.170.56"); // 仮
     let before_accel = { acc_x: 0, acc_y: 0, acc_z: 0, gyro_x: 0, gyro_y: 0, gyro_z: 0 };
@@ -49,7 +68,7 @@ export default function PlayingPage() {
         after_beat += 1;
         if (after_beat > 6) {
           now_beat += 1;
-          setMsg("動きが検出されました: " + now_beat + ", " + currentBeatStrong);
+          onBeatDetected(currentBeatStrong);
           beat_strong = 0;
           after_beat = 0;
         }
