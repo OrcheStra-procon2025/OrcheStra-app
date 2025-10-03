@@ -4,20 +4,24 @@ import { useGlobalParams } from "@/context/useGlobalParams";
 
 interface MusicPlayer {
   isPlayerReady: boolean;
+  player: Tone.GrainPlayer | null;
+  musicPath: string | null;
   playMusic: () => Promise<void>;
   stopMusic: () => void;
 }
 
 export const useMusicPlayer = (): MusicPlayer => {
   const { selectedMusic } = useGlobalParams();
-  const playerRef = useRef<Tone.Player | null>(null);
+  const playerRef = useRef<Tone.GrainPlayer | null>(null);
+  const musicPathRef = useRef<string | null>(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
   useEffect(() => {
     // Tone.Playerを初期化し、音楽ファイルをロードする
     const setupPlayer = () => {
+      musicPathRef.current = selectedMusic?.path || null;
       try {
-        const player = new Tone.Player({
+        const player = new Tone.GrainPlayer({
           url: selectedMusic?.path || "",
           onload: () => {
             console.log("音楽ファイルのロードが完了しました。");
@@ -62,5 +66,11 @@ export const useMusicPlayer = (): MusicPlayer => {
     }
   };
 
-  return { isPlayerReady, playMusic, stopMusic };
+  return {
+    isPlayerReady,
+    player: playerRef.current,
+    musicPath: musicPathRef.current,
+    playMusic,
+    stopMusic,
+  };
 };
