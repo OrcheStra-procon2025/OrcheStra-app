@@ -2,22 +2,22 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   PoseLandmarker,
   FilesetResolver,
-  DrawingUtils,
 } from "@mediapipe/tasks-vision";
 import type { PoseLandmarkerResult } from "@mediapipe/tasks-vision";
-import type { NormalizedLandmarkList } from "@/utils/models";
+import type {
+  NormalizedLandmarkList,
+  NormalizedLandmark,
+} from "@/utils/models";
+import { KEY_JOINTS_MEDIAPIPE } from "@/utils/mediapipeJoint";
 
 interface VisionController {
-  /** 骨格検出が有効かどうか */
   isDetecting: boolean;
-  /** MediaPipeとカメラのロード状態 */
   isLoading: boolean;
-  /** エラーメッセージ */
   error: string | null;
-  /** 検出を開始し、ポーズデータの記録を開始する */
   startDetection: (deviceId: string) => Promise<void>;
-  /** 検出を停止し、記録されたポーズデータを返す */
   stopDetection: () => NormalizedLandmarkList[];
+  rightWrist: NormalizedLandmark | null;
+  leftWrist: NormalizedLandmark | null;
 }
 
 const MODEL_PATH = `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`;
@@ -26,7 +26,6 @@ const WASM_PATH =
 
 export const useVisionController = (
   videoElement: HTMLVideoElement | null,
-  canvasElement: HTMLCanvasElement | null,
 ): VisionController => {
   // 状態管理
   const isDetectingRef = useRef<boolean>(false);
@@ -36,6 +35,8 @@ export const useVisionController = (
   const [poseDataRecorder, setPoseDataRecorder] = useState<
     NormalizedLandmarkList[]
   >([]);
+  const [rightWrist, setRightWrist] = useState<NormalizedLandmark | null>(null);
+  const [leftWrist, setLeftWrist] = useState<NormalizedLandmark | null>(null);
 
   // 内部インスタンス管理
   const poseLandmarkerRef = useRef<PoseLandmarker | null>(null);
@@ -46,7 +47,7 @@ export const useVisionController = (
   // ------------------------------------------------
 
   useEffect(() => {
-    if (!canvasElement || !videoElement) return;
+    if (!videoElement) return;
 
     const loadLandmarker = async () => {
       try {
@@ -73,52 +74,37 @@ export const useVisionController = (
         poseLandmarkerRef.current.close();
       }
     };
-  }, [canvasElement, videoElement]);
+  }, [videoElement]);
 
   const detectionLoop = useCallback(() => {
-    if (
-      !isDetectingRef.current ||
-      !videoElement ||
-      !canvasElement ||
-      !poseLandmarkerRef.current
-    )
+    if (!isDetectingRef.current || !videoElement || !poseLandmarkerRef.current)
       return;
-    if (!canvasElement) return;
 
-    const canvasCtx = canvasElement.getContext("2d");
-    if (!canvasCtx) return;
-
-    // 検出処理
-    canvasElement.width = videoElement.videoWidth;
-    canvasElement.height = videoElement.videoHeight;
     const poseResult: PoseLandmarkerResult =
       poseLandmarkerRef.current.detectForVideo(videoElement, performance.now());
 
     // データ記録
     if (poseResult.landmarks.length > 0) {
-      setPoseDataRecorder((prevData) => [
-        ...prevData,
-        poseResult.landmarks[0] as NormalizedLandmarkList,
-      ]);
-    }
+      const currentLandmarks = poseResult
+        .landmarks[0] as NormalizedLandmarkList;
+      setPoseDataRecorder((prevData) => [...prevData, currentLandmarks]);
 
-    // 描画処理
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    const drawingUtils = new DrawingUtils(canvasCtx);
-    for (const landmarks of poseResult.landmarks) {
-      drawingUtils.drawLandmarks(landmarks, { color: "#E1D319", radius: 5 });
-      drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS, {
-        color: "#4A5E76",
-        lineWidth: 3,
-      });
+      const rightWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST];
+      const leftWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
+      if (rightWrist) {
+        setRightWrist(rightWrist);
+      }
+      if (leftWrist) {
+        setLeftWrist(leftWrist);
+      }
     }
 
     window.requestAnimationFrame(detectionLoop);
-  }, [videoElement, canvasElement]);
+  }, [videoElement]);
 
   const startDetection = useCallback(
     async (deviceId: string) => {
-      if (isLoading || error || !videoElement || !canvasElement) return;
+      if (isLoading || error || !videoElement) return;
 
       try {
         // カメラ開始
@@ -151,7 +137,7 @@ export const useVisionController = (
         setIsDetectingState(false);
       }
     },
-    [isLoading, error, videoElement, canvasElement, detectionLoop],
+    [isLoading, error, videoElement, detectionLoop],
   );
 
   const stopDetection = useCallback((): NormalizedLandmarkList[] => {
@@ -180,5 +166,7 @@ export const useVisionController = (
     error,
     startDetection,
     stopDetection,
+    rightWrist,
+    leftWrist,
   };
 };

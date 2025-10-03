@@ -15,7 +15,11 @@ import { useVisionController } from "@/hooks/useVisionController";
 import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
 import { useMusicPlayer } from "@/hooks/useMusicPlayer";
-import type { NormalizedLandmarkList } from "@/utils/models";
+import type {
+  NormalizedLandmarkList,
+  NormalizedLandmark,
+} from "@/utils/models";
+import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
 
 const PlayingPage = () => {
   useEffect(() => {
@@ -30,7 +34,6 @@ const PlayingPage = () => {
   }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // 状態
   const [feedbackText, setFeedbackText] = useState<string>("");
@@ -48,7 +51,9 @@ const PlayingPage = () => {
     error: visionError,
     startDetection,
     stopDetection,
-  } = useVisionController(videoRef.current, canvasRef.current);
+    rightWrist,
+    leftWrist,
+  } = useVisionController(videoRef.current);
   const {
     analyze: runAiAnalysis,
     isLoading: isAiLoading,
@@ -64,6 +69,32 @@ const PlayingPage = () => {
     !aiError;
   const isDisabled = !isReady || !selectedDeviceId;
   const isCountingDown = countdown !== null;
+
+  const getScreenCoord = (landmark: NormalizedLandmark | null) => {
+    if (videoRef.current && isDetecting && landmark) {
+      const videoRect = videoRef.current.getBoundingClientRect();
+
+      const xInVideo = landmark.x * videoRect.width;
+      const yInVideo = landmark.y * videoRect.height;
+
+      const screenX = videoRect.left + xInVideo;
+      const screenY = videoRect.top + yInVideo;
+
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+
+      const centeredX = screenX - centerX;
+      const centeredY = screenY - centerY;
+
+      return { screenX: centeredX, screenY: centeredY };
+    }
+    return { screenX: 0, screenY: 0 };
+  };
+
+  const { screenX: rightWristX, screenY: rightWristY } =
+    getScreenCoord(rightWrist);
+  const { screenX: leftWristX, screenY: leftWristY } =
+    getScreenCoord(leftWrist);
 
   const primaryColor = "skyblue";
   const disabledColor = "#A9A9A9";
@@ -197,17 +228,12 @@ const PlayingPage = () => {
             height="100%"
             borderRadius="8px"
           />
-          <chakra.canvas
-            id="overlayCanvas"
-            ref={canvasRef}
-            position="absolute"
-            top="0"
-            left="0"
-            width="100%"
-            height="100%"
-            borderRadius="8px"
-            bg="transparent"
-          />
+          {isDetecting && rightWristX !== 0 && rightWristY !== 0 && (
+            <ThreejsEffect x={rightWristX} y={rightWristX} />
+          )}
+          {isDetecting && leftWristX !== 0 && leftWristY !== 0 && (
+            <ThreejsEffect x={leftWristX} y={leftWristY} />
+          )}
         </Box>
 
         <VStack spacing={2} mt={4} width="100%" maxWidth="640px">
