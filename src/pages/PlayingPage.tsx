@@ -20,19 +20,9 @@ import type {
   NormalizedLandmark,
 } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
+import { changeSpeed } from "../utils/speedChanger";
 
-const PlayingPage = () => {
-  useEffect(() => {
-    const socket = new WebSocket("ws://10.76.190.56"); // 仮
-    socket.addEventListener("open", () => {
-      console.log("WS connected!");
-    });
-    socket.addEventListener("message", (event) => {
-      const accel_info = JSON.parse(event.data);
-      console.log(accel_info);
-    });
-  }, []);
-
+export default function PlayingPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // 状態
@@ -42,7 +32,8 @@ const PlayingPage = () => {
   const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate
 
   // カスタムフック
-  const { isPlayerReady, playMusic, stopMusic } = useMusicPlayer();
+  const { isPlayerReady, player, musicPath, playMusic, stopMusic } =
+    useMusicPlayer();
   const { cameraDevices, selectedDeviceId, isCameraReady, handleSelectChange } =
     useCameraSelector();
   const {
@@ -123,6 +114,7 @@ const PlayingPage = () => {
     // カウントダウン後に検出と音楽再生を開始
     await startDetection(selectedDeviceId);
     await playMusic();
+    await changeSpeed(player!, musicPath!);
   };
 
   const handleStop = async () => {
@@ -341,6 +333,4 @@ const PlayingPage = () => {
       </VStack>
     </VStack>
   );
-};
-
-export default PlayingPage;
+}
