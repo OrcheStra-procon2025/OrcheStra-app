@@ -9,7 +9,6 @@ export const ParameterProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const updateSelectedMusic = (music: MusicDataModel | null) => {
-    console.log("call");
     setSelectedMusic(music);
   };
 

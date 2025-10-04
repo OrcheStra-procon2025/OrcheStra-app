@@ -7,7 +7,6 @@ export const SelectTableMusicList = () => {
   const { selectedMusic, updateSelectedMusic } = useGlobalParams();
 
   const handleSelect = (music: MusicDataModel) => {
-    console.log(music);
     updateSelectedMusic(music);
   };
 
