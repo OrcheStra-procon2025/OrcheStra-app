@@ -31,9 +31,9 @@ export const StarEffect = ({ id, position, url, onDelete }: Props) => {
 
   useEffect(() => {
     randomPosition.current = position;
-    randomPosition.current[0] += rand(-0.2, 0.2);
-    randomPosition.current[1] += rand(-0.2, 0.2);
-    randomPosition.current[2] += rand(-0.2, 0.2);
+    randomPosition.current[0] += rand(-0.15, 0.15);
+    randomPosition.current[1] += rand(-0.00, 0.45);
+    randomPosition.current[2] += rand(-0.25, 0.25);
 
     createdAtRef.current = performance.now();
     clonedSceneRef.current = clone(scene);
@@ -44,7 +44,7 @@ export const StarEffect = ({ id, position, url, onDelete }: Props) => {
     directionPowerRef.current = rand(-1, 1);
     rotateDirectionRef.current = Math.random() <= 0.5 ? 1 : -1;
     randomScaleRef.current =
-      Math.random() <= 0.1 ? rand(1, 1.25) : rand(0.25, 0.5);
+      Math.random() <= 0.2 ? rand(1, 1.25) : rand(0.25, 0.5);
   }, [position, scene]);
 
   useFrame(() => {

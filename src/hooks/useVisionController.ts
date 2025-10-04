@@ -90,8 +90,8 @@ export const useVisionController = (
       const leftWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
       if (
         rightWrist &&
-        // rightWrist.visibility !== undefined &&
-        // rightWrist.visibility > 0.5 &&
+        rightWrist.visibility !== undefined &&
+        rightWrist.visibility > 0.2 &&
         rightWrist.x >= 0 &&
         rightWrist.x <= 1 &&
         rightWrist.y >= 0 &&
@@ -104,8 +104,8 @@ export const useVisionController = (
 
       if (
         leftWrist &&
-        // leftWrist.visibility !== undefined &&
-        // leftWrist.visibility > 0.5 &&
+        leftWrist.visibility !== undefined &&
+        leftWrist.visibility > 0.2 &&
         leftWrist.x >= 0 &&
         leftWrist.x <= 1 &&
         leftWrist.y >= 0 &&
