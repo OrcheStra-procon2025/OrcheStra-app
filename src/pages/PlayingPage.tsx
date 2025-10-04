@@ -229,7 +229,7 @@ const PlayingPage = () => {
             borderRadius="8px"
           />
           {isDetecting && rightWristX !== 0 && rightWristY !== 0 && (
-            <ThreejsEffect x={rightWristX} y={rightWristX} />
+            <ThreejsEffect x={rightWristX} y={rightWristY} />
           )}
           {isDetecting && leftWristX !== 0 && leftWristY !== 0 && (
             <ThreejsEffect x={leftWristX} y={leftWristY} />

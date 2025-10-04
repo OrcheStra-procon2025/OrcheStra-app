@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  PoseLandmarker,
-  FilesetResolver,
-} from "@mediapipe/tasks-vision";
+import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import type { PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 import type {
   NormalizedLandmarkList,
@@ -91,11 +88,32 @@ export const useVisionController = (
 
       const rightWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST];
       const leftWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
-      if (rightWrist) {
+      if (
+        rightWrist &&
+        rightWrist.visibility !== undefined &&
+        rightWrist.visibility > 0.5 &&
+        rightWrist.x >= 0 &&
+        rightWrist.x <= 1 &&
+        rightWrist.y >= 0 &&
+        rightWrist.y <= 1
+      ) {
         setRightWrist(rightWrist);
+      } else {
+        setRightWrist(null);
       }
-      if (leftWrist) {
+
+      if (
+        leftWrist &&
+        leftWrist.visibility !== undefined &&
+        leftWrist.visibility > 0.5 &&
+        leftWrist.x >= 0 &&
+        leftWrist.x <= 1 &&
+        leftWrist.y >= 0 &&
+        leftWrist.y <= 1
+      ) {
         setLeftWrist(leftWrist);
+      } else {
+        setLeftWrist(null);
       }
     }
 
