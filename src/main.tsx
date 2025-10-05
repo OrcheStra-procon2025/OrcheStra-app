@@ -6,7 +6,7 @@ import "@/css/index.css";
 import { ParameterProvider } from "./context/ParameterContext";
 import SelectionPage from "./pages/SelectionPage";
 import PlayingPage from "./pages/PlayingPage";
-//import Result from "./pages/result";
+import ResultPage from "./pages/ResultPage";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -16,6 +16,7 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/" element={<SelectionPage />} />
             <Route path="play" element={<PlayingPage />} />
+            <Route path="/result" element={<ResultPage />} />
           </Routes>
         </BrowserRouter>
       </ParameterProvider>

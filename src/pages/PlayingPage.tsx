@@ -3,25 +3,21 @@ import {
   Box,
   VStack,
   HStack,
-  Heading,
   Select,
   Button,
   Text,
-  Spinner,
   Center,
   chakra,
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 import { useVisionController } from "@/hooks/useVisionController";
-import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
 import { useMusicPlayer } from "@/hooks/useMusicPlayer";
-import type {
-  NormalizedLandmarkList,
-  NormalizedLandmark,
-} from "@/utils/models";
+import type { NormalizedLandmark } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
 
 const PlayingPage = () => {
+  const navigate = useNavigate();
   useEffect(() => {
     const socket = new WebSocket("ws://10.76.190.56"); // 仮
     socket.addEventListener("open", () => {
@@ -34,11 +30,6 @@ const PlayingPage = () => {
   }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  // 状態
-  const [feedbackText, setFeedbackText] = useState<string>("");
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [showFeedback, setShowFeedback] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate
 
   // カスタムフック
@@ -59,19 +50,12 @@ const PlayingPage = () => {
     rightWrist,
     leftWrist,
   } = useVisionController(videoRef.current);
-  const {
-    analyze: runAiAnalysis,
-    isLoading: isAiLoading,
-    error: aiError,
-  } = useAiAnalyzer();
 
   const isReady =
     isPlayerReady &&
     isCameraReady &&
     !isVisionLoading &&
-    !isAiLoading &&
     !visionError &&
-    !aiError &&
     !musicError;
   const isDisabled = !isReady || !selectedDeviceId;
   const isCountingDown = countdown !== null;
@@ -102,14 +86,10 @@ const PlayingPage = () => {
   const { screenX: leftWristX, screenY: leftWristY } =
     getScreenCoord(leftWrist);
 
-  const primaryColor = "skyblue";
   const disabledColor = "#A9A9A9";
 
   const handleStart = async () => {
     if (isDisabled || isDetecting || isCountingDown) return;
-
-    setShowFeedback(false);
-    setFeedbackText("");
 
     // 3秒のカウントダウン処理
     await new Promise<void>((resolve) => {
@@ -134,38 +114,16 @@ const PlayingPage = () => {
   const handleStop = async () => {
     if (!isDetecting) return;
     stopMusic();
-    const poseData: NormalizedLandmarkList[] = stopDetection();
-
-    setShowFeedback(true);
-    setIsAnalyzing(true);
-    setFeedbackText("");
-
-    try {
-      const result = await runAiAnalysis(poseData);
-      setFeedbackText(result);
-    } catch (error) {
-      console.error("AI分析中にエラーが発生しました:", error);
-      setFeedbackText("AI分析中に致命的なエラーが発生しました。");
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const handleRetry = () => {
-    setShowFeedback(false);
-    setFeedbackText("");
+    stopDetection();
+    navigate("/result");
   };
 
   const renderStatus = () => {
-    if (visionError || aiError) {
-      return (
-        <Text color="red.500">
-          エラーが発生しました: {visionError || aiError}
-        </Text>
-      );
+    if (visionError) {
+      return <Text color="red.500">エラーが発生しました: {visionError}</Text>;
     }
-    if (isVisionLoading || isAiLoading) {
-      return <Text color="gray.500">AI/検出システムを準備中...</Text>;
+    if (isVisionLoading) {
+      return <Text color="gray.500">指揮検出システムを準備中...</Text>;
     }
     if (!isCameraReady) {
       return <Text color="gray.500">カメラアクセスを待機中...</Text>;
@@ -188,16 +146,12 @@ const PlayingPage = () => {
 
   return (
     <VStack spacing="20px" p="20px" minH="100vh">
-      <Heading as="h1" size="lg">
-        Orchestra - 指揮者体験システム
-      </Heading>
-
       <Box
         id="conducting-screen"
-        display={showFeedback ? "none" : "flex"}
+        display="flex"
         flexDir="column"
         alignItems="center"
-        width="55vw"
+        width="60vw"
       >
         <Box
           position="relative"
@@ -284,7 +238,7 @@ const PlayingPage = () => {
             <Button
               id="stopButton"
               onClick={handleStop}
-              style={{ display: isDetecting ? "block" : "none" }}
+              display={isDetecting ? "block" : "none"}
               colorScheme="blue"
               color="white"
               padding="10px"
@@ -296,59 +250,6 @@ const PlayingPage = () => {
           </HStack>
         </VStack>
       </Box>
-
-      {/* ===== フィードバック画面 ===== */}
-      <VStack
-        id="feedback-screen"
-        display={showFeedback ? "flex" : "none"}
-        width="100%"
-        maxWidth="640px"
-        spacing={4}
-      >
-        <Heading as="h2" size="md">
-          AIによるフィードバック
-        </Heading>
-        {isAnalyzing && (
-          <Center w="full" py={4} flexDirection="column">
-            <Spinner
-              thickness="4px"
-              speed="1s"
-              emptyColor="gray.200"
-              color={primaryColor}
-              size="xl"
-            />
-            <Text mt={2}>分析中...</Text>
-          </Center>
-        )}
-        <Box
-          id="feedbackResult"
-          padding="1.5em"
-          bg="white"
-          borderRadius="8px"
-          minHeight="100px"
-          textAlign="center"
-          width="100%"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Text fontSize="lg" fontWeight="bold">
-            {!isAnalyzing ? feedbackText : ""}
-          </Text>
-        </Box>
-        <Button
-          id="retryButton"
-          onClick={handleRetry}
-          style={{ display: !isAnalyzing && showFeedback ? "block" : "none" }}
-          colorScheme="blue"
-          color="white"
-          padding="10px"
-          fontSize="16px"
-          borderRadius="5px"
-        >
-          もう一度試す
-        </Button>
-      </VStack>
     </VStack>
   );
 };

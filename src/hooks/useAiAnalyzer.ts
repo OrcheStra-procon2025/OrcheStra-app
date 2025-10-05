@@ -12,6 +12,7 @@ import {
 interface AiAnalyzerResult {
   analyze: (fullPoseData: NormalizedLandmarkList[]) => Promise<string>;
   isLoading: boolean;
+  isAnalyzing: boolean;
   error: string | null;
 }
 
@@ -22,6 +23,7 @@ export const useAiAnalyzer = (): AiAnalyzerResult => {
   const [aiModel, setAiModel] = useState<tf.LayersModel | null>(null);
   const [scalerInfo, setScalerInfo] = useState<ScalerInfoModel | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,16 +62,19 @@ export const useAiAnalyzer = (): AiAnalyzerResult => {
         return "AIシステムエラー：モデルが見つからないか、準備中です。";
       }
 
+      setIsAnalyzing(true);
+
       const styleSequence: string[] = await analyzeSequence(
         fullPoseData,
         aiModel,
         scalerInfo,
       );
       const segments: string[] = segmentSequence(styleSequence);
+      setIsAnalyzing(false);
       return generateFeedbackText(segments);
     },
     [isLoading, error, aiModel, scalerInfo],
   );
 
-  return { analyze, isLoading, error };
+  return { analyze, isLoading, isAnalyzing, error };
 };

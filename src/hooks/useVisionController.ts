@@ -6,6 +6,7 @@ import type {
   NormalizedLandmark,
 } from "@/utils/models";
 import { KEY_JOINTS_MEDIAPIPE } from "@/utils/mediapipeJoint";
+import { useGlobalParams } from "@/context/useGlobalParams";
 
 interface VisionController {
   isDetecting: boolean;
@@ -25,6 +26,7 @@ export const useVisionController = (
   videoElement: HTMLVideoElement | null,
 ): VisionController => {
   // 状態管理
+  const { updatePoseDataList } = useGlobalParams();
   const isDetectingRef = useRef<boolean>(false);
   const [isDetectingState, setIsDetectingState] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -166,9 +168,11 @@ export const useVisionController = (
       streamRef.current = null;
     }
 
+    updatePoseDataList(poseDataRecorder);
+
     // 記録されたデータを返す
     return poseDataRecorder;
-  }, [poseDataRecorder, videoElement]);
+  }, [poseDataRecorder, videoElement, updatePoseDataList]);
 
   return {
     isDetecting: isDetectingState,

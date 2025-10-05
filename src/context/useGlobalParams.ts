@@ -1,9 +1,11 @@
 import { useContext, createContext } from "react";
-import type { MusicDataModel } from "@/utils/models";
+import type { MusicDataModel, NormalizedLandmarkList } from "@/utils/models";
 
 export type ParameterContextType = {
   selectedMusic: MusicDataModel | null;
   updateSelectedMusic: (music: MusicDataModel | null) => void;
+  poseDataList: NormalizedLandmarkList[];
+  updatePoseDataList: (poseList: NormalizedLandmarkList[]) => void;
 };
 
 export const ParameterContext = createContext<ParameterContextType | null>(
