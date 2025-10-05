@@ -15,12 +15,13 @@ import { useVisionController } from "@/hooks/useVisionController";
 import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
 import { useMusicPlayer } from "@/hooks/useMusicPlayer";
+import { useSpeedChanger } from "@/hooks/useSpeedChanger";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import type {
   NormalizedLandmarkList,
   NormalizedLandmark,
 } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
-import { changeSpeed } from "../utils/speedChanger";
 
 export default function PlayingPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -50,6 +51,8 @@ export default function PlayingPage() {
     isLoading: isAiLoading,
     error: aiError,
   } = useAiAnalyzer();
+  const { startChanging, processAccelInfo } = useSpeedChanger();
+  const { registerOnMessage } = useWebSocket();
 
   const isReady =
     isPlayerReady &&
@@ -95,6 +98,7 @@ export default function PlayingPage() {
 
     setShowFeedback(false);
     setFeedbackText("");
+    startChanging(musicPath!);
 
     // 3秒のカウントダウン処理
     await new Promise<void>((resolve) => {
@@ -114,7 +118,9 @@ export default function PlayingPage() {
     // カウントダウン後に検出と音楽再生を開始
     await startDetection(selectedDeviceId);
     await playMusic();
-    await changeSpeed(player!, musicPath!);
+    registerOnMessage(async (data) => {
+      await processAccelInfo(player!, data);
+    });
   };
 
   const handleStop = async () => {
