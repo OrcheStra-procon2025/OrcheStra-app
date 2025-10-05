@@ -83,7 +83,7 @@ const PlayingPage = () => {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
 
-      const centeredX = screenX - centerX;
+      const centeredX = centerX - screenX;
       const centeredY = screenY - centerY;
 
       return { screenX: centeredX, screenY: centeredY };
@@ -227,6 +227,7 @@ const PlayingPage = () => {
             width="100%"
             height="100%"
             borderRadius="8px"
+            transform="scaleX(-1)"
           />
           {isDetecting && rightWristX !== 0 && rightWristY !== 0 && (
             <ThreejsEffect x={rightWristX} y={rightWristY} />
