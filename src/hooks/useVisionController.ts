@@ -93,11 +93,7 @@ export const useVisionController = (
       if (
         rightWrist &&
         rightWrist.visibility !== undefined &&
-        rightWrist.visibility > 0.2 &&
-        rightWrist.x >= 0 &&
-        rightWrist.x <= 1 &&
-        rightWrist.y >= 0 &&
-        rightWrist.y <= 1
+        rightWrist.visibility > 0.5
       ) {
         setRightWrist(rightWrist);
       } else {
@@ -107,11 +103,7 @@ export const useVisionController = (
       if (
         leftWrist &&
         leftWrist.visibility !== undefined &&
-        leftWrist.visibility > 0.2 &&
-        leftWrist.x >= 0 &&
-        leftWrist.x <= 1 &&
-        leftWrist.y >= 0 &&
-        leftWrist.y <= 1
+        leftWrist.visibility > 0.5
       ) {
         setLeftWrist(leftWrist);
       } else {
