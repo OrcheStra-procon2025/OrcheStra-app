@@ -42,7 +42,12 @@ const PlayingPage = () => {
   const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate
 
   // カスタムフック
-  const { isPlayerReady, playMusic, stopMusic } = useMusicPlayer();
+  const {
+    isPlayerReady,
+    playMusic,
+    stopMusic,
+    isError: musicError,
+  } = useMusicPlayer();
   const { cameraDevices, selectedDeviceId, isCameraReady, handleSelectChange } =
     useCameraSelector();
   const {
@@ -66,7 +71,8 @@ const PlayingPage = () => {
     !isVisionLoading &&
     !isAiLoading &&
     !visionError &&
-    !aiError;
+    !aiError &&
+    !musicError;
   const isDisabled = !isReady || !selectedDeviceId;
   const isCountingDown = countdown !== null;
 
@@ -164,9 +170,12 @@ const PlayingPage = () => {
     if (!isCameraReady) {
       return <Text color="gray.500">カメラアクセスを待機中...</Text>;
     }
-    if (!isPlayerReady) {
+    if (musicError) {
+      return <Text color="red.500">音楽ファイルの読み込みに失敗しました</Text>;
+    } else if (!isPlayerReady) {
       return <Text color="gray.500">音楽ファイルを読み込み中...</Text>;
     }
+
     return null;
   };
 
