@@ -7,17 +7,20 @@ import { ParameterProvider } from "./context/ParameterContext";
 import SelectionPage from "./pages/SelectionPage";
 import PlayingPage from "./pages/PlayingPage";
 import ResultPage from "./pages/ResultPage";
+import Layout from "./components/Layout";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ChakraProvider>
       <ParameterProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<SelectionPage />} />
-            <Route path="play" element={<PlayingPage />} />
-            <Route path="/result" element={<ResultPage />} />
-          </Routes>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<SelectionPage />} />
+              <Route path="play" element={<PlayingPage />} />
+              <Route path="/result" element={<ResultPage />} />
+            </Routes>
+          </Layout>
         </BrowserRouter>
       </ParameterProvider>
     </ChakraProvider>
