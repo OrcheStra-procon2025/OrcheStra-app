@@ -6,10 +6,9 @@ import { StarEffect } from "./SterEffect";
 
 const objectList: string[] = [
   "objects/star.glb",
-  "objects/star_blue.glb",
+  "objects/star_deeppink.glb",
+  "objects/star_deepskyblue.glb",
   "objects/star_green.glb",
-  "objects/star_red.glb",
-  "objects/star_pink.glb",
 ]
 
 export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
@@ -27,7 +26,7 @@ export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
           -(y * 3.796875 * 2) / window.innerHeight,
           0,
         ],
-        objectPath: objectList[Math.floor(Math.random() * 5)]
+        objectPath: objectList[Math.floor(Math.random() * 4)]
       },
     ]);
     return;
