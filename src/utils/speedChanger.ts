@@ -20,13 +20,12 @@ export function calculatePlaybackRate(orig_bpm: number): number|void {
     beat_count += 1;
     console.log(lastBeat, beat_count);
     if (lastBeat && beat_count >= 8) {
-        console.log("pushing!");
         beatIntervals.push(now.getTime() - lastBeat.getTime());
         lastBeat = now;
     } else {
         lastBeat = now;
     }
-    if (beatIntervals.length > 2) {
+    if (beatIntervals.length > 4) {
         beatIntervals.shift();
         lastBeat = now;
     }
@@ -35,6 +34,7 @@ export function calculatePlaybackRate(orig_bpm: number): number|void {
             beatIntervals.reduce((prev, curr) => prev + curr, 0) /
             beatIntervals.length;
         lastBeat = now;
+        console.log("BPM: " + (60 / (averageInterval / 1000)));
         return (60 / (averageInterval / 1000)) / orig_bpm;
     }
 }

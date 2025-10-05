@@ -6,16 +6,16 @@ interface SpeedChanger {
     processAccelInfo: (player: GrainPlayer, accel_info: any) => void;
 }
 
-const THRESHOLD = 1.5;
+// const THRESHOLD = 1.5;
 
 let before_accel = { acc_x: 0, acc_y: 0, acc_z: 0, gyro_x: 0, gyro_y: 0, gyro_z: 0 };
-const accelQueue: number[] = [];
+const accelQueue: number[][] = [];
 let isProcessingAccelQueue = false;
 let after_beat = 0;
 let orig_bpm: number | null = null;
 let detectingBeat: boolean = false;
 
-const onBeatDetected = (accelDelta: number, player: GrainPlayer) => {
+const onBeatDetected = (player: GrainPlayer) => {
     const playbackRate = calculatePlaybackRate(orig_bpm!);
     if (playbackRate) {
         player.playbackRate = playbackRate;
@@ -27,16 +27,16 @@ const processAccelQueue = async (player: GrainPlayer): Promise<void> => {
         isProcessingAccelQueue = true;
 
         while (accelQueue.length > 0) {
-            const currentAccelDelta = accelQueue.shift()!;
+            const currentAccelInfo = accelQueue.shift()!;
 
-            if (currentAccelDelta > THRESHOLD) {
+            if (currentAccelInfo[0] > currentAccelInfo[1] * 1.3) {
                 if (!detectingBeat) {
                     detectingBeat = true;
-                    onBeatDetected(currentAccelDelta, player);
+                    onBeatDetected(player);
                 }
             } else {
                 after_beat += 1;
-                if (after_beat > 4) {
+                if (after_beat > 5) {
                     after_beat = 0;
                     detectingBeat = false;
                 }
@@ -57,12 +57,17 @@ export const useSpeedChanger = (): SpeedChanger => {
     };
 
     const processAccelInfo = (player: GrainPlayer, accel_info: any) => {
-        const sum_acc_delta =
-            Math.abs(accel_info.acc_x - before_accel.acc_x) +
-            Math.abs(accel_info.acc_y - before_accel.acc_y) +
-            Math.abs(accel_info.acc_z - before_accel.acc_z);
+        const sum_acc =
+            Math.abs(accel_info.acc_x) +
+            Math.abs(accel_info.acc_y) +
+            Math.abs(accel_info.acc_z);
 
-        accelQueue.push(sum_acc_delta);
+        const before_sum_acc = 
+            Math.abs(before_accel.acc_x) +
+            Math.abs(before_accel.acc_y) +
+            Math.abs(before_accel.acc_z);
+
+        accelQueue.push([sum_acc, before_sum_acc]);
         processAccelQueue(player);
         before_accel = accel_info;
     };
