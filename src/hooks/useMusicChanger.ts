@@ -1,21 +1,23 @@
 import type { GrainPlayer } from "tone";
-import { analyzeFileBPM, calculatePlaybackRate } from "@/utils/speedChanger";
+import { analyzeFileBPM, calculatePlaybackRate, calculateVolumeRate } from "@/utils/musicChanger";
 
-interface SpeedChanger {
+interface MusicChanger {
     startChanging: (musicPath: string) => Promise<void>;
     processAccelInfo: (player: GrainPlayer, accel_info: any) => void;
 }
 
-const STOPBEAT_THRESHOLD = 1.4;
-const STARTBEAT_THRESHOLD = 2.0;
+const STOPBEAT_THRESHOLD = 2.8;
+const STARTBEAT_THRESHOLD = 4.0;
 
-let accelQueue: number[][] = [];
-let isProcessingAccelQueue: boolean = false;
-let origBPM: number | null = null;
-let detectingBeat: boolean = false;
-let beforeAccel = { acc_x: 0, acc_y: 0, acc_z: 0, gyro_x: 0, gyro_y: 0, gyro_z: 0 };
+let pendingSumAcc: any[] = []; // 今回検出した拍についてのSumAcc
+let beforeSumAcc: number | null = null; // 前回に検出した拍についてのSumAcc
+let detectingSumAcc: number[] = []; // 現在検出中（継続中）の拍についてのSumAcc
+let accelQueue: number[][] = []; // 加速度情報処理用のキュー
+let isProcessingAccelQueue: boolean = false; // ↑のロック
+let origBPM: number | null = null; // 原曲のBPM（再生前に算出）
+let detectingBeat: boolean = false; // 現在拍が検出中（継続中）であるかどうか
 
-export const useSpeedChanger = (): SpeedChanger => {
+export const useMusicChanger = (): MusicChanger => {
     const onBeatDetected = (player: GrainPlayer) => {
         console.log(origBPM);
         const playbackRate = calculatePlaybackRate(origBPM!);
@@ -28,6 +30,9 @@ export const useSpeedChanger = (): SpeedChanger => {
             player.playbackRate = playbackRate;
         }
     };
+    const onBeatFinished = (player: GrainPlayer) => {
+        player.volume.value = calculateVolumeRate(detectingSumAcc);
+    };
 
     const processAccelQueue = async (player: GrainPlayer): Promise<void> => {
         if (!isProcessingAccelQueue && accelQueue.length > 0) {
@@ -38,13 +43,16 @@ export const useSpeedChanger = (): SpeedChanger => {
                 //console.log(currentAccelInfo[0]);
                 //console.log(currentAccelInfo[0] > STARTBEAT_THRESHOLD);
                 if (currentAccelInfo[0] > STARTBEAT_THRESHOLD) {
+                    detectingSumAcc.push(currentAccelInfo[0])
                     if (!detectingBeat) {
                         console.log("Detected Beat!");
                         detectingBeat = true;
                         onBeatDetected(player);
                     }
                 } else if (currentAccelInfo[0] < STOPBEAT_THRESHOLD) {
+                    if (detectingBeat) {onBeatFinished(player);}
                     detectingBeat = false;
+                    detectingSumAcc = [];
                 }
 
                 // 他の処理がブロックされないよう、少し待機
@@ -66,15 +74,16 @@ export const useSpeedChanger = (): SpeedChanger => {
             Math.abs(accel_info.acc_y) +
             Math.abs(accel_info.acc_z);
 
-        const before_sum_acc = 
-            Math.abs(beforeAccel.acc_x) +
-            Math.abs(beforeAccel.acc_y) +
-            Math.abs(beforeAccel.acc_z);
+        pendingSumAcc.push(sum_acc);
 
-        accelQueue.push([sum_acc, before_sum_acc]);
-        processAccelQueue(player);
-        beforeAccel = accel_info;
+        if (pendingSumAcc.length >= 2) {
+            const sumAcc = pendingSumAcc.reduce((prev, curr) => prev + curr)
+            accelQueue.push([sumAcc, beforeSumAcc]);
+            pendingSumAcc = [];
+            processAccelQueue(player);
+            beforeSumAcc = sumAcc;
+        }
     };
 
-    return { startChanging, processAccelInfo: processAccelInfo };
+    return { startChanging, processAccelInfo };
 };

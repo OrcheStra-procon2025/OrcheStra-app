@@ -15,7 +15,7 @@ import { useVisionController } from "@/hooks/useVisionController";
 import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
 import { useMusicPlayer } from "@/hooks/useMusicPlayer";
-import { useSpeedChanger } from "@/hooks/useSpeedChanger";
+import { useMusicChanger } from "@/hooks/useMusicChanger";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type {
   NormalizedLandmarkList,
@@ -51,7 +51,7 @@ export default function PlayingPage() {
     isLoading: isAiLoading,
     error: aiError,
   } = useAiAnalyzer();
-  const { startChanging, processAccelInfo } = useSpeedChanger();
+  const { startChanging, processAccelInfo } = useMusicChanger();
   const { registerOnMessage } = useWebSocket();
 
   const isReady =
