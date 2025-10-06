@@ -19,31 +19,22 @@ interface VisionController {
 }
 
 const MODEL_PATH = `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`;
-const WASM_PATH =
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm";
+const WASM_PATH = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm";
 
 export const useVisionController = (
   videoElement: HTMLVideoElement | null,
 ): VisionController => {
-  // 状態管理
   const { updatePoseDataList } = useGlobalParams();
-  const isDetectingRef = useRef<boolean>(false);
   const [isDetectingState, setIsDetectingState] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [poseDataRecorder, setPoseDataRecorder] = useState<
-    NormalizedLandmarkList[]
-  >([]);
   const [rightWrist, setRightWrist] = useState<NormalizedLandmark | null>(null);
   const [leftWrist, setLeftWrist] = useState<NormalizedLandmark | null>(null);
 
-  // 内部インスタンス管理
+  const poseDataRecorderRef = useRef<NormalizedLandmarkList[]>([]);
   const poseLandmarkerRef = useRef<PoseLandmarker | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-
-  // ------------------------------------------------
-  // 初期化 (モデルロード)
-  // ------------------------------------------------
+  const isDetectingRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!videoElement) return;
@@ -64,10 +55,8 @@ export const useVisionController = (
         setIsLoading(false);
       }
     };
-
     loadLandmarker();
 
-    // クリーンアップ
     return () => {
       if (poseLandmarkerRef.current) {
         poseLandmarkerRef.current.close();
@@ -76,36 +65,24 @@ export const useVisionController = (
   }, [videoElement]);
 
   const detectionLoop = useCallback(() => {
-    if (!isDetectingRef.current || !videoElement || !poseLandmarkerRef.current)
-      return;
+    if (!isDetectingRef.current || !videoElement || !poseLandmarkerRef.current) return;
 
-    const poseResult: PoseLandmarkerResult =
-      poseLandmarkerRef.current.detectForVideo(videoElement, performance.now());
+    const poseResult = poseLandmarkerRef.current.detectForVideo(videoElement, performance.now());
 
-    // データ記録
     if (poseResult.landmarks.length > 0) {
-      const currentLandmarks = poseResult
-        .landmarks[0] as NormalizedLandmarkList;
-      setPoseDataRecorder((prevData) => [...prevData, currentLandmarks]);
+      const currentLandmarks = poseResult.landmarks[0] as NormalizedLandmarkList;
+      poseDataRecorderRef.current.push(currentLandmarks);
 
-      const rightWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST];
-      const leftWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
-      if (
-        rightWrist &&
-        rightWrist.visibility !== undefined &&
-        rightWrist.visibility > 0.5
-      ) {
-        setRightWrist(rightWrist);
+      const rightWristData = currentLandmarks[KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST];
+      if (rightWristData?.visibility && rightWristData.visibility > 0.5) {
+        setRightWrist(rightWristData);
       } else {
         setRightWrist(null);
       }
 
-      if (
-        leftWrist &&
-        leftWrist.visibility !== undefined &&
-        leftWrist.visibility > 0.5
-      ) {
-        setLeftWrist(leftWrist);
+      const leftWristData = currentLandmarks[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
+      if (leftWristData?.visibility && leftWristData.visibility > 0.5) {
+        setLeftWrist(leftWristData);
       } else {
         setLeftWrist(null);
       }
@@ -114,65 +91,54 @@ export const useVisionController = (
     window.requestAnimationFrame(detectionLoop);
   }, [videoElement]);
 
-  const startDetection = useCallback(
-    async (deviceId: string) => {
-      if (isLoading || error || !videoElement) return;
+  const startDetection = useCallback(async (deviceId: string) => {
+    if (isLoading || error || !videoElement) return;
 
-      try {
-        // カメラ開始
-        const constraints: MediaStreamConstraints = { video: { deviceId } };
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        streamRef.current = stream; // StreamをRefに保存
+    try {
+      const constraints: MediaStreamConstraints = { video: { deviceId } };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
 
-        videoElement.srcObject = stream;
-        videoElement.play();
+      videoElement.srcObject = stream;
+      videoElement.play();
 
-        // データ記録をリセットし、検出を開始
-        setPoseDataRecorder([]);
-        isDetectingRef.current = true; // Refを即座にtrueにする
-        setIsDetectingState(true); // 外部コンポーネントへの通知用
+      poseDataRecorderRef.current = [];
+      isDetectingRef.current = true;
+      setIsDetectingState(true);
 
-        // 初回ループの開始はloadeddataイベント後に行う（ビデオが準備できてから）
-        videoElement.addEventListener("loadeddata", detectionLoop, {
-          once: true,
-        });
-        if (videoElement.readyState >= 2) {
-          // 2はHAVE_CURRENT_DATA
+      const startLoop = () => {
+        if (isDetectingRef.current) {
           detectionLoop();
         }
-      } catch (e) {
-        console.error("カメラのアクセスに失敗しました:", e);
-        setError(
-          "カメラの開始に失敗しました。アクセス権限を確認してください。",
-        );
-        isDetectingRef.current = false;
-        setIsDetectingState(false);
+      };
+      
+      videoElement.addEventListener("loadeddata", startLoop, { once: true });
+      if (videoElement.readyState >= 2) {
+        startLoop();
       }
-    },
-    [isLoading, error, videoElement, detectionLoop],
-  );
+    } catch (e) {
+      console.error("カメラのアクセスに失敗しました:", e);
+      setError("カメラの開始に失敗しました。アクセス権限を確認してください。");
+      isDetectingRef.current = false;
+      setIsDetectingState(false);
+    }
+  }, [isLoading, error, videoElement, detectionLoop]);
 
   const stopDetection = useCallback((): NormalizedLandmarkList[] => {
     isDetectingRef.current = false;
     setIsDetectingState(false);
 
-    // カメラを停止し、Refをクリーンアップ
-    const currentStream = streamRef.current;
-    if (currentStream) {
-      currentStream
-        .getTracks()
-        .forEach((track: MediaStreamTrack) => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
       if (videoElement) {
         videoElement.srcObject = null;
       }
       streamRef.current = null;
     }
 
-    updatePoseDataList(poseDataRecorder);
-
-    // 記録されたデータを返す
-    return poseDataRecorder;
-  }, [poseDataRecorder, videoElement, updatePoseDataList]);
+    updatePoseDataList(poseDataRecorderRef.current);
+    return poseDataRecorderRef.current;
+  }, [videoElement, updatePoseDataList]);
 
   return {
     isDetecting: isDetectingState,
