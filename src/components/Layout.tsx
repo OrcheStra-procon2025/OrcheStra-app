@@ -8,16 +8,19 @@ interface LayoutProps {
 
 const Layout = ({children}: LayoutProps)=>{
   return( 
-  <div>
-    <Box>
+    <Box       
+      minHeight="100vh" 
+      width="100vw" 
+      display="flex" 
+      flexDirection="column"
+      bg="#fefff3"
+    >
       <Header />
-        <Box as="main">
-        {children}
+        <Box as="main" flex="1" width="full">
+          {children}
         </Box>
       <Footer />
     </Box>
-  </div>
-
-)};
+  )};
 
 export default Layout;
