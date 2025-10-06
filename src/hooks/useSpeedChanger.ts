@@ -6,54 +6,58 @@ interface SpeedChanger {
     processAccelInfo: (player: GrainPlayer, accel_info: any) => void;
 }
 
-// const THRESHOLD = 1.5;
+const STOPBEAT_THRESHOLD = 1.4;
+const STARTBEAT_THRESHOLD = 2.0;
 
-let before_accel = { acc_x: 0, acc_y: 0, acc_z: 0, gyro_x: 0, gyro_y: 0, gyro_z: 0 };
-const accelQueue: number[][] = [];
-let isProcessingAccelQueue = false;
-let after_beat = 0;
-let orig_bpm: number | null = null;
+let accelQueue: number[][] = [];
+let isProcessingAccelQueue: boolean = false;
+let origBPM: number | null = null;
 let detectingBeat: boolean = false;
-
-const onBeatDetected = (player: GrainPlayer) => {
-    const playbackRate = calculatePlaybackRate(orig_bpm!);
-    if (playbackRate) {
-        player.playbackRate = playbackRate;
-    }
-};
-
-const processAccelQueue = async (player: GrainPlayer): Promise<void> => {
-    if (!isProcessingAccelQueue && accelQueue.length > 0) {
-        isProcessingAccelQueue = true;
-
-        while (accelQueue.length > 0) {
-            const currentAccelInfo = accelQueue.shift()!;
-
-            if (currentAccelInfo[0] > currentAccelInfo[1] * 1.3) {
-                if (!detectingBeat) {
-                    detectingBeat = true;
-                    onBeatDetected(player);
-                }
-            } else {
-                after_beat += 1;
-                if (after_beat > 5) {
-                    after_beat = 0;
-                    detectingBeat = false;
-                }
-            }
-
-            // 他の処理がブロックされないよう、少し待機
-            await new Promise((resolve) => setTimeout(resolve, 0));
-        }
-
-        isProcessingAccelQueue = false;
-    }
-};
+let beforeAccel = { acc_x: 0, acc_y: 0, acc_z: 0, gyro_x: 0, gyro_y: 0, gyro_z: 0 };
 
 export const useSpeedChanger = (): SpeedChanger => {
+    const onBeatDetected = (player: GrainPlayer) => {
+        console.log(origBPM);
+        const playbackRate = calculatePlaybackRate(origBPM!);
+        if (playbackRate) {
+            if (playbackRate < 0.5) {
+                player.grainSize = 0.01;
+            } else {
+                player.grainSize = 0.1;
+            }
+            player.playbackRate = playbackRate;
+        }
+    };
+
+    const processAccelQueue = async (player: GrainPlayer): Promise<void> => {
+        if (!isProcessingAccelQueue && accelQueue.length > 0) {
+            isProcessingAccelQueue = true;
+
+            while (accelQueue.length > 0) {
+                const currentAccelInfo = accelQueue.shift()!;
+                //console.log(currentAccelInfo[0]);
+                //console.log(currentAccelInfo[0] > STARTBEAT_THRESHOLD);
+                if (currentAccelInfo[0] > STARTBEAT_THRESHOLD) {
+                    if (!detectingBeat) {
+                        console.log("Detected Beat!");
+                        detectingBeat = true;
+                        onBeatDetected(player);
+                    }
+                } else if (currentAccelInfo[0] < STOPBEAT_THRESHOLD) {
+                    detectingBeat = false;
+                }
+
+                // 他の処理がブロックされないよう、少し待機
+                await new Promise((resolve) => setTimeout(resolve, 0));
+            }
+
+            isProcessingAccelQueue = false;
+        }
+};
 
     const startChanging = async (musicPath: string) => {
-        orig_bpm = await analyzeFileBPM(musicPath);
+        origBPM = await analyzeFileBPM(musicPath);
+        console.debug("updated origBPM!")
     };
 
     const processAccelInfo = (player: GrainPlayer, accel_info: any) => {
@@ -63,13 +67,13 @@ export const useSpeedChanger = (): SpeedChanger => {
             Math.abs(accel_info.acc_z);
 
         const before_sum_acc = 
-            Math.abs(before_accel.acc_x) +
-            Math.abs(before_accel.acc_y) +
-            Math.abs(before_accel.acc_z);
+            Math.abs(beforeAccel.acc_x) +
+            Math.abs(beforeAccel.acc_y) +
+            Math.abs(beforeAccel.acc_z);
 
         accelQueue.push([sum_acc, before_sum_acc]);
         processAccelQueue(player);
-        before_accel = accel_info;
+        beforeAccel = accel_info;
     };
 
     return { startChanging, processAccelInfo: processAccelInfo };

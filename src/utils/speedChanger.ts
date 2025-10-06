@@ -11,12 +11,16 @@ export async function analyzeFileBPM(musicPath: string) {
 }
 
 const beatIntervals: Array<number> = []; // 単位: ms
-let lastBeat: Date | null = null;
+let lastBeat: Date|null = null;
+let lastBPM: number | null = null;
 let beat_count: number = 0;
 
 export function calculatePlaybackRate(orig_bpm: number): number|void {
-    console.debug("Beat detected!");
     const now = new Date();
+    if (lastBeat && now.getTime() - lastBeat.getTime() < 200) {
+        return;
+    };
+    console.debug("Beat detected!");
     beat_count += 1;
     console.log(lastBeat, beat_count);
     if (lastBeat && beat_count >= 8) {
@@ -34,7 +38,15 @@ export function calculatePlaybackRate(orig_bpm: number): number|void {
             beatIntervals.reduce((prev, curr) => prev + curr, 0) /
             beatIntervals.length;
         lastBeat = now;
-        console.log("BPM: " + (60 / (averageInterval / 1000)));
-        return (60 / (averageInterval / 1000)) / orig_bpm;
+        const baseBPM = 60 / (averageInterval / 1000);
+        let calculatedBPM;
+        if (lastBPM) {
+            calculatedBPM = baseBPM + (baseBPM - lastBPM) * 0.25;
+        } else {
+            calculatedBPM = baseBPM;
+        }
+        console.log("BPM: " + calculatedBPM);
+        console.log(calculatedBPM / orig_bpm);
+        return calculatedBPM / orig_bpm;
     }
 }

@@ -23,6 +23,7 @@ export const useMusicPlayer = (): MusicPlayer => {
       try {
         const player = new Tone.GrainPlayer({
           url: selectedMusic?.path || "",
+          grainSize: 0.1,
           onload: () => {
             console.log("音楽ファイルのロードが完了しました。");
             setIsPlayerReady(true);
