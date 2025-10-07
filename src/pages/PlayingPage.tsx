@@ -226,7 +226,9 @@ const PlayingPage = () => {
               id="startButton"
               onClick={handleStart}
               disabled={isDisabled || isDetecting || isCountingDown}
-              colorScheme="blue"
+              colorScheme={
+                isDisabled || isDetecting || isCountingDown ? "none" : "blue"
+              }
               color="white"
               _disabled={{ bg: disabledColor, cursor: "not-allowed" }}
               padding="10px"
