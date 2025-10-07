@@ -25,7 +25,8 @@ interface ProgressBarData {
 
 const ResultPage = () => {
   const navigate = useNavigate();
-  const { poseDataList, updateSelectedMusic } = useGlobalParams();
+  const { poseDataList, updateSelectedMusic, updatePoseDataList } =
+    useGlobalParams();
   const {
     analyze: runAiAnalysis,
     isLoading: isAiLoading,
@@ -43,6 +44,7 @@ const ResultPage = () => {
     setProgressIndex(-1);
     setAllProgressFinished(false);
     updateSelectedMusic(null);
+    updatePoseDataList([]);
     navigate("/");
   };
 
