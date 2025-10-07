@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <Box bg="#969696ff" color="white" width='full' px={4} py={2}>
       <Text>
-         © 2025 OrcheStra App. 
+         © 2025 OrcheStra Team. 
       </Text>
     </Box>
   );
