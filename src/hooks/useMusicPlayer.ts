@@ -8,6 +8,7 @@ interface MusicPlayer {
   musicPath: string | null;
   playMusic: () => Promise<void>;
   stopMusic: () => void;
+  isError: boolean;
 }
 
 export const useMusicPlayer = (): MusicPlayer => {
@@ -15,6 +16,7 @@ export const useMusicPlayer = (): MusicPlayer => {
   const playerRef = useRef<Tone.GrainPlayer | null>(null);
   const musicPathRef = useRef<string | null>(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     // Tone.Playerを初期化し、音楽ファイルをロードする
@@ -29,6 +31,7 @@ export const useMusicPlayer = (): MusicPlayer => {
             setIsPlayerReady(true);
           },
           onerror: (error) => {
+            setIsError(true);
             console.error(
               "音楽ファイルのロード中にエラーが発生しました:",
               error,
@@ -73,5 +76,6 @@ export const useMusicPlayer = (): MusicPlayer => {
     musicPath: musicPathRef.current,
     playMusic,
     stopMusic,
+    isError,
   };
 };

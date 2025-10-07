@@ -4,9 +4,19 @@ import { OrthographicCamera } from "@react-three/drei";
 import { StarEffect } from "./SterEffect";
 
 
+const objectList: string[] = [
+  "objects/star.glb",
+  // "objects/star_deeppink.glb",
+  "objects/star_deepskyblue.glb",
+  "objects/star_white.glb",
+  "objects/star_pink2.glb",
+  // "objects/star_lightgreen2.glb",
+  "objects/star_green.glb",
+]
+
 export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
   const [components, setComponents] = useState<
-    { id: number; position: [number, number, number] }[]
+    { id: number; position: [number, number, number], objectPath: string }[]
   >([]);
 
   useEffect(() => {
@@ -19,6 +29,7 @@ export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
           -(y * 3.796875 * 2) / window.innerHeight,
           0,
         ],
+        objectPath: objectList[Math.floor(Math.random() * 5)]
       },
     ]);
     return;
@@ -50,12 +61,12 @@ export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
       />
       <directionalLight position={[1, 1, 1]} intensity={2} />
 
-      {components.map(({ id, position }) => (
+      {components.map(({ id, position, objectPath }) => (
         <StarEffect
           key={id}
           id={id}
           position={position}
-          url={"objects/star.glb"}
+          url={objectPath}
           onDelete={handleDelete}
         />
       ))}

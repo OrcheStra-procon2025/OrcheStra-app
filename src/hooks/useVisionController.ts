@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  PoseLandmarker,
-  FilesetResolver,
-} from "@mediapipe/tasks-vision";
+import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import type { PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 import type {
   NormalizedLandmarkList,
   NormalizedLandmark,
 } from "@/utils/models";
 import { KEY_JOINTS_MEDIAPIPE } from "@/utils/mediapipeJoint";
+import { useGlobalParams } from "@/context/useGlobalParams";
 
 interface VisionController {
   isDetecting: boolean;
@@ -28,6 +26,7 @@ export const useVisionController = (
   videoElement: HTMLVideoElement | null,
 ): VisionController => {
   // 状態管理
+  const { updatePoseDataList } = useGlobalParams();
   const isDetectingRef = useRef<boolean>(false);
   const [isDetectingState, setIsDetectingState] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -91,11 +90,24 @@ export const useVisionController = (
 
       const rightWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST];
       const leftWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
-      if (rightWrist) {
+      if (
+        rightWrist &&
+        rightWrist.visibility !== undefined &&
+        rightWrist.visibility > 0.5
+      ) {
         setRightWrist(rightWrist);
+      } else {
+        setRightWrist(null);
       }
-      if (leftWrist) {
+
+      if (
+        leftWrist &&
+        leftWrist.visibility !== undefined &&
+        leftWrist.visibility > 0.5
+      ) {
         setLeftWrist(leftWrist);
+      } else {
+        setLeftWrist(null);
       }
     }
 
@@ -156,9 +168,11 @@ export const useVisionController = (
       streamRef.current = null;
     }
 
+    updatePoseDataList(poseDataRecorder);
+
     // 記録されたデータを返す
     return poseDataRecorder;
-  }, [poseDataRecorder, videoElement]);
+  }, [poseDataRecorder, videoElement, updatePoseDataList]);
 
   return {
     isDetecting: isDetectingState,

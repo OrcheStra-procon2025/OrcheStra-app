@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import type { MusicDataModel } from "@/utils/models";
+import type { MusicDataModel, NormalizedLandmarkList } from "@/utils/models";
 import { type ParameterContextType, ParameterContext } from "./useGlobalParams";
 
 export const ParameterProvider = ({ children }: { children: ReactNode }) => {
@@ -7,13 +7,23 @@ export const ParameterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedMusic, setSelectedMusic] = useState<MusicDataModel | null>(
     null,
   );
+  const [poseDataList, setPoseDataList] = useState<NormalizedLandmarkList[]>(
+    [],
+  );
 
   const updateSelectedMusic = (music: MusicDataModel | null) => {
-    console.log("call");
     setSelectedMusic(music);
   };
+  const updatePoseDataList = (poseList: NormalizedLandmarkList[]) => {
+    setPoseDataList(poseList);
+  };
 
-  const value: ParameterContextType = { selectedMusic, updateSelectedMusic };
+  const value: ParameterContextType = {
+    selectedMusic,
+    updateSelectedMusic,
+    poseDataList,
+    updatePoseDataList,
+  };
 
   return (
     <ParameterContext.Provider value={value}>

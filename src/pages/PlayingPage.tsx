@@ -3,38 +3,46 @@ import {
   Box,
   VStack,
   HStack,
-  Heading,
   Select,
   Button,
   Text,
-  Spinner,
   Center,
   chakra,
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 import { useVisionController } from "@/hooks/useVisionController";
-import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
 import { useMusicPlayer } from "@/hooks/useMusicPlayer";
 import { useMusicChanger } from "@/hooks/useMusicChanger";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import type {
-  NormalizedLandmarkList,
-  NormalizedLandmark,
-} from "@/utils/models";
+import type { NormalizedLandmark } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
 
-export default function PlayingPage() {
-  const videoRef = useRef<HTMLVideoElement>(null);
+const PlayingPage = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const socket = new WebSocket("ws://10.76.190.56"); // 仮
+    socket.addEventListener("open", () => {
+      console.log("WS connected!");
+    });
+    socket.addEventListener("message", (event) => {
+      const accel_info = JSON.parse(event.data);
+      console.log(accel_info);
+    });
+  }, []);
 
-  // 状態
-  const [feedbackText, setFeedbackText] = useState<string>("");
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [showFeedback, setShowFeedback] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate
 
   // カスタムフック
-  const { isPlayerReady, player, musicPath, playMusic, stopMusic } =
-    useMusicPlayer();
+  const {
+    isPlayerReady,
+    player,
+    musicPath,
+    playMusic,
+    stopMusic,
+    isError: musicError,
+  } = useMusicPlayer();
   const { cameraDevices, selectedDeviceId, isCameraReady, handleSelectChange } =
     useCameraSelector();
   const {
@@ -46,11 +54,7 @@ export default function PlayingPage() {
     rightWrist,
     leftWrist,
   } = useVisionController(videoRef.current);
-  const {
-    analyze: runAiAnalysis,
-    isLoading: isAiLoading,
-    error: aiError,
-  } = useAiAnalyzer();
+
   const { startChanging, processAccelInfo } = useMusicChanger();
   const { registerOnMessage } = useWebSocket();
 
@@ -58,9 +62,8 @@ export default function PlayingPage() {
     isPlayerReady &&
     isCameraReady &&
     !isVisionLoading &&
-    !isAiLoading &&
     !visionError &&
-    !aiError;
+    !musicError;
   const isDisabled = !isReady || !selectedDeviceId;
   const isCountingDown = countdown !== null;
 
@@ -77,7 +80,7 @@ export default function PlayingPage() {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
 
-      const centeredX = screenX - centerX;
+      const centeredX = centerX - screenX;
       const centeredY = screenY - centerY;
 
       return { screenX: centeredX, screenY: centeredY };
@@ -90,14 +93,11 @@ export default function PlayingPage() {
   const { screenX: leftWristX, screenY: leftWristY } =
     getScreenCoord(leftWrist);
 
-  const primaryColor = "skyblue";
   const disabledColor = "#A9A9A9";
 
   const handleStart = async () => {
     if (isDisabled || isDetecting || isCountingDown) return;
 
-    setShowFeedback(false);
-    setFeedbackText("");
     startChanging(musicPath!);
 
     // 3秒のカウントダウン処理
@@ -126,45 +126,26 @@ export default function PlayingPage() {
   const handleStop = async () => {
     if (!isDetecting) return;
     stopMusic();
-    const poseData: NormalizedLandmarkList[] = stopDetection();
-
-    setShowFeedback(true);
-    setIsAnalyzing(true);
-    setFeedbackText("");
-
-    try {
-      const result = await runAiAnalysis(poseData);
-      setFeedbackText(result);
-    } catch (error) {
-      console.error("AI分析中にエラーが発生しました:", error);
-      setFeedbackText("AI分析中に致命的なエラーが発生しました。");
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const handleRetry = () => {
-    setShowFeedback(false);
-    setFeedbackText("");
+    stopDetection();
+    navigate("/result");
   };
 
   const renderStatus = () => {
-    if (visionError || aiError) {
-      return (
-        <Text color="red.500">
-          エラーが発生しました: {visionError || aiError}
-        </Text>
-      );
+    if (visionError) {
+      return <Text color="red.500">エラーが発生しました: {visionError}</Text>;
     }
-    if (isVisionLoading || isAiLoading) {
-      return <Text color="gray.500">AI/検出システムを準備中...</Text>;
+    if (isVisionLoading) {
+      return <Text color="gray.500">指揮検出システムを準備中...</Text>;
     }
     if (!isCameraReady) {
       return <Text color="gray.500">カメラアクセスを待機中...</Text>;
     }
-    if (!isPlayerReady) {
+    if (musicError) {
+      return <Text color="red.500">音楽ファイルの読み込みに失敗しました</Text>;
+    } else if (!isPlayerReady) {
       return <Text color="gray.500">音楽ファイルを読み込み中...</Text>;
     }
+
     return null;
   };
 
@@ -177,16 +158,12 @@ export default function PlayingPage() {
 
   return (
     <VStack spacing="20px" p="20px" minH="100vh">
-      <Heading as="h1" size="lg">
-        Orchestra - 指揮者体験システム
-      </Heading>
-
       <Box
         id="conducting-screen"
-        display={showFeedback ? "none" : "flex"}
+        display="flex"
         flexDir="column"
         alignItems="center"
-        width="55vw"
+        width="60vw"
       >
         <Box
           position="relative"
@@ -225,9 +202,10 @@ export default function PlayingPage() {
             width="100%"
             height="100%"
             borderRadius="8px"
+            transform="scaleX(-1)"
           />
           {isDetecting && rightWristX !== 0 && rightWristY !== 0 && (
-            <ThreejsEffect x={rightWristX} y={rightWristX} />
+            <ThreejsEffect x={rightWristX} y={rightWristY} />
           )}
           {isDetecting && leftWristX !== 0 && leftWristY !== 0 && (
             <ThreejsEffect x={leftWristX} y={leftWristY} />
@@ -260,7 +238,9 @@ export default function PlayingPage() {
               id="startButton"
               onClick={handleStart}
               disabled={isDisabled || isDetecting || isCountingDown}
-              colorScheme="blue"
+              colorScheme={
+                isDisabled || isDetecting || isCountingDown ? "none" : "blue"
+              }
               color="white"
               _disabled={{ bg: disabledColor, cursor: "not-allowed" }}
               padding="10px"
@@ -272,7 +252,7 @@ export default function PlayingPage() {
             <Button
               id="stopButton"
               onClick={handleStop}
-              style={{ display: isDetecting ? "block" : "none" }}
+              display={isDetecting ? "block" : "none"}
               colorScheme="blue"
               color="white"
               padding="10px"
@@ -284,59 +264,8 @@ export default function PlayingPage() {
           </HStack>
         </VStack>
       </Box>
-
-      {/* ===== フィードバック画面 ===== */}
-      <VStack
-        id="feedback-screen"
-        display={showFeedback ? "flex" : "none"}
-        width="100%"
-        maxWidth="640px"
-        spacing={4}
-      >
-        <Heading as="h2" size="md">
-          AIによるフィードバック
-        </Heading>
-        {isAnalyzing && (
-          <Center w="full" py={4} flexDirection="column">
-            <Spinner
-              thickness="4px"
-              speed="1s"
-              emptyColor="gray.200"
-              color={primaryColor}
-              size="xl"
-            />
-            <Text mt={2}>分析中...</Text>
-          </Center>
-        )}
-        <Box
-          id="feedbackResult"
-          padding="1.5em"
-          bg="white"
-          borderRadius="8px"
-          minHeight="100px"
-          textAlign="center"
-          width="100%"
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Text fontSize="lg" fontWeight="bold">
-            {!isAnalyzing ? feedbackText : ""}
-          </Text>
-        </Box>
-        <Button
-          id="retryButton"
-          onClick={handleRetry}
-          style={{ display: !isAnalyzing && showFeedback ? "block" : "none" }}
-          colorScheme="blue"
-          color="white"
-          padding="10px"
-          fontSize="16px"
-          borderRadius="5px"
-        >
-          もう一度試す
-        </Button>
-      </VStack>
     </VStack>
   );
-}
+};
+
+export default PlayingPage;
