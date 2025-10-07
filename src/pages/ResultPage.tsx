@@ -139,8 +139,11 @@ const ResultPage = () => {
               <Box
                 id="feedbackResult"
                 padding="1.5em"
-                bg="white"
+                margin="10px"
+                bg="#DDE1E6"
                 borderRadius="8px"
+                borderColor="black"
+                boxShadow="md"
                 minHeight="100px"
                 textAlign="center"
                 width="100%"
@@ -148,7 +151,7 @@ const ResultPage = () => {
                 alignItems="center"
                 justifyContent="center"
               >
-                <Text fontSize="lg" fontWeight="bold">
+                <Text fontSize="20px" fontWeight="bold" color="#2C3E59">
                   {feedbackText}
                 </Text>
               </Box>
