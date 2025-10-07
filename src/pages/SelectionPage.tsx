@@ -1,4 +1,4 @@
-import { Flex, Button, Heading} from "@chakra-ui/react";
+import { Flex, Button, Heading } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { SelectTableMusicList } from "@/components/SelectTableMusicList";
@@ -25,8 +25,7 @@ const SelectionPage = () => {
           justifyContent="center"
           gap="30px"
           marginBottom="20px"
-        >
-        </Flex>
+        ></Flex>
         <Heading as="h3" fontWeight="normal" size="lg" marginBottom="10px;">
           一覧から選ぶ
         </Heading>
