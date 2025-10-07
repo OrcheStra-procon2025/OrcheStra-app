@@ -94,7 +94,14 @@ const ResultPage = () => {
   const progressBarsToShow = progressBarData.slice(0, progressIndex + 1);
 
   return (
-    <VStack id="feedback-screen" width="100%" maxWidth="640px" spacing={4}>
+    <VStack
+      id="feedback-screen"
+      width="100%"
+      maxWidth="640px"
+      spacing={4}
+      margin="0 auto"
+      alignItems="center"
+    >
       <Heading as="h1" size="md" paddingTop="10">
         AIによるフィードバック
       </Heading>
