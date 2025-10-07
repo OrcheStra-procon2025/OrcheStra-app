@@ -12,20 +12,16 @@ import { useGlobalParams } from "@/context/useGlobalParams";
 import { useNavigate } from "react-router-dom";
 import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import { CompetitiveProgressBar } from "@/components/CompetitiveProgressBar";
+// ProgressBarDataのインポートを削除
+// import type { ProgressBarData } from "@/utils/models";
 
+// --- ここに ProgressBarData の定義を追加 ---
 interface ProgressBarData {
   labelLeft: string;
   labelRight: string;
   value: number;
 }
-
-const MOCK_PROGRESS_DATA: ProgressBarData[] = [
-  { labelLeft: "暗い", labelRight: "明るい", value: 75 },
-  { labelLeft: "弱い", labelRight: "強い", value: 30 },
-  { labelLeft: "静的", labelRight: "動的", value: 55 },
-  { labelLeft: "ゆったり", labelRight: "速い", value: 100 },
-  { labelLeft: "小さい", labelRight: "大きい", value: 0 },
-];
+// -----------------------------------------
 
 const ResultPage = () => {
   const navigate = useNavigate();
@@ -35,23 +31,33 @@ const ResultPage = () => {
     isLoading: isAiLoading,
     isAnalyzing,
   } = useAiAnalyzer();
+
   const [feedbackText, setFeedbackText] = useState<string>("");
+  const [progressBarData, setProgressBarData] = useState<ProgressBarData[]>([]);
   const [progressIndex, setProgressIndex] = useState(-1);
   const [allProgressFinished, setAllProgressFinished] = useState(false);
 
   const handleBackSelection = () => {
     setFeedbackText("");
-    setProgressIndex(-1); // リセット
-    setAllProgressFinished(false); // リセット
+    setProgressBarData([]);
+    setProgressIndex(-1);
+    setAllProgressFinished(false);
     navigate("/");
   };
 
   const handleAiAnalysis = useCallback(async () => {
     try {
-      const result = await runAiAnalysis(poseDataList);
-      setFeedbackText(result);
+      const { feedbackText: resultText, progressBarData: resultData } =
+        await runAiAnalysis(poseDataList);
 
-      setProgressIndex(0);
+      setFeedbackText(resultText);
+      setProgressBarData(resultData);
+
+      if (resultData.length > 0) {
+        setProgressIndex(0);
+      } else {
+        setAllProgressFinished(true);
+      }
     } catch (error) {
       console.error("AI分析中にエラーが発生しました:", error);
       setFeedbackText("AI分析中に致命的なエラーが発生しました。");
@@ -60,15 +66,13 @@ const ResultPage = () => {
 
   const handleProgressEnd = useCallback(() => {
     setProgressIndex((prevIndex) => {
-      const nextIndex = prevIndex + 1;
-
-      if (nextIndex >= MOCK_PROGRESS_DATA.length) {
+      if (!progressBarData || prevIndex + 1 >= progressBarData.length) {
         setAllProgressFinished(true);
         return prevIndex;
       }
-      return nextIndex;
+      return prevIndex + 1;
     });
-  }, []);
+  }, [progressBarData]);
 
   useEffect(() => {
     if (
@@ -87,7 +91,7 @@ const ResultPage = () => {
     handleAiAnalysis,
   ]);
 
-  const progressBarsToShow = MOCK_PROGRESS_DATA.slice(0, progressIndex + 1);
+  const progressBarsToShow = progressBarData.slice(0, progressIndex + 1);
 
   return (
     <VStack id="feedback-screen" width="100%" maxWidth="640px" spacing={4}>
@@ -108,7 +112,6 @@ const ResultPage = () => {
       ) : (
         <>
           <VStack spacing={6} width="100%" mt={4}>
-            {/* プログレスバーの表示エリア */}
             {progressBarsToShow.map((data, index) => (
               <CompetitiveProgressBar
                 key={index}
