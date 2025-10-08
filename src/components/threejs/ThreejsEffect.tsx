@@ -6,11 +6,9 @@ import { StarEffect } from "./SterEffect";
 
 const objectList: string[] = [
   "objects/star.glb",
-  // "objects/star_deeppink.glb",
   "objects/star_deepskyblue.glb",
   "objects/star_white.glb",
   "objects/star_pink2.glb",
-  // "objects/star_lightgreen2.glb",
   "objects/star_green.glb",
 ]
 

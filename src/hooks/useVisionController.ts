@@ -52,7 +52,7 @@ export const useVisionController = (
       try {
         const vision = await FilesetResolver.forVisionTasks(WASM_PATH);
         const landmarker = await PoseLandmarker.createFromOptions(vision, {
-          baseOptions: { modelAssetPath: MODEL_PATH, delegate: "GPU" },
+          baseOptions: { modelAssetPath: MODEL_PATH, delegate: "CPU" },
           runningMode: "VIDEO",
           numPoses: 1,
         });
@@ -127,19 +127,31 @@ export const useVisionController = (
         videoElement.srcObject = stream;
         videoElement.play();
 
+        await new Promise<void>((resolve) => {
+          const handleLoadedData = () => {
+            // サイズ情報が取得できているか確認
+            if (videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
+              videoElement.removeEventListener("loadeddata", handleLoadedData);
+              resolve();
+            }
+          };
+          videoElement.addEventListener("loadeddata", handleLoadedData);
+
+          // ビデオの読み込みをトリガー
+          videoElement.play();
+
+          // すでにデータがある場合は即座に解決
+          if (videoElement.readyState >= 2) {
+            handleLoadedData();
+          }
+        });
+
         // データ記録をリセットし、検出を開始
         setPoseDataRecorder([]);
         isDetectingRef.current = true; // Refを即座にtrueにする
         setIsDetectingState(true); // 外部コンポーネントへの通知用
 
-        // 初回ループの開始はloadeddataイベント後に行う（ビデオが準備できてから）
-        videoElement.addEventListener("loadeddata", detectionLoop, {
-          once: true,
-        });
-        if (videoElement.readyState >= 2) {
-          // 2はHAVE_CURRENT_DATA
-          detectionLoop();
-        }
+        detectionLoop();
       } catch (e) {
         console.error("カメラのアクセスに失敗しました:", e);
         setError(
