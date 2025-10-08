@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"; // useCallback をインポート
 import { OrthographicCamera } from "@react-three/drei";
 import { StarEffect } from "./SterEffect";
 
@@ -12,6 +12,7 @@ const objectList: string[] = [
   "objects/star_green.glb",
 ]
 
+// (中略)
 export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
   const [components, setComponents] = useState<
     { id: number; position: [number, number, number], objectPath: string }[]
@@ -33,9 +34,15 @@ export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
     return;
   }, [x, y]);
 
-  const handleDelete = (id: number) => {
+  // 変更前
+  // const handleDelete = (id: number) => {
+  //   setComponents((prev) => prev.filter((c) => c.id !== id));
+  // };
+
+  // 変更後
+  const handleDelete = useCallback((id: number) => {
     setComponents((prev) => prev.filter((c) => c.id !== id));
-  };
+  }, []); // 依存配列は空でOK
 
   return (
     <Canvas
