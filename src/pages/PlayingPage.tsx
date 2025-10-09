@@ -157,13 +157,13 @@ const PlayingPage = () => {
   };
 
   return (
-    <VStack spacing="20px" p="20px" minH="100vh">
+    <VStack paddingTop="10px">
       <Box
         id="conducting-screen"
         display="flex"
         flexDir="column"
         alignItems="center"
-        width="60vw"
+        width="53vw"
       >
         <Box
           position="relative"

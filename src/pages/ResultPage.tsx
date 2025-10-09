@@ -25,7 +25,8 @@ interface ProgressBarData {
 
 const ResultPage = () => {
   const navigate = useNavigate();
-  const { poseDataList } = useGlobalParams();
+  const { poseDataList, updateSelectedMusic, updatePoseDataList } =
+    useGlobalParams();
   const {
     analyze: runAiAnalysis,
     isLoading: isAiLoading,
@@ -42,6 +43,8 @@ const ResultPage = () => {
     setProgressBarData([]);
     setProgressIndex(-1);
     setAllProgressFinished(false);
+    updateSelectedMusic(null);
+    updatePoseDataList([]);
     navigate("/");
   };
 
@@ -94,7 +97,14 @@ const ResultPage = () => {
   const progressBarsToShow = progressBarData.slice(0, progressIndex + 1);
 
   return (
-    <VStack id="feedback-screen" width="100%" maxWidth="640px" spacing={4}>
+    <VStack
+      id="feedback-screen"
+      width="100%"
+      maxWidth="640px"
+      spacing={4}
+      margin="0 auto"
+      alignItems="center"
+    >
       <Heading as="h1" size="md" paddingTop="10">
         AIによるフィードバック
       </Heading>
@@ -132,8 +142,11 @@ const ResultPage = () => {
               <Box
                 id="feedbackResult"
                 padding="1.5em"
-                bg="white"
+                margin="10px"
+                bg="#DDE1E6"
                 borderRadius="8px"
+                borderColor="black"
+                boxShadow="md"
                 minHeight="100px"
                 textAlign="center"
                 width="100%"
@@ -141,7 +154,7 @@ const ResultPage = () => {
                 alignItems="center"
                 justifyContent="center"
               >
-                <Text fontSize="lg" fontWeight="bold">
+                <Text fontSize="20px" fontWeight="bold" color="#2C3E59">
                   {feedbackText}
                 </Text>
               </Box>

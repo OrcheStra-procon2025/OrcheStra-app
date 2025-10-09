@@ -1,5 +1,4 @@
-import logo from "@/assets/logo.png";
-import { Flex, Box, Button, Heading, Image } from "@chakra-ui/react";
+import { Flex, Button, Heading } from "@chakra-ui/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { SelectTableMusicList } from "@/components/SelectTableMusicList";
@@ -19,24 +18,21 @@ const SelectionPage = () => {
 
   return (
     <>
-      <Flex direction="column" align="center" width="100%" padding="6">
+      <Flex direction="column" align="center" width="full" padding="6">
         <Flex
           width="100%"
           alignItems="center"
           justifyContent="center"
           gap="30px"
           marginBottom="20px"
-        >
-          <Box maxW="200px;">
-            <Image src={logo} alt="Logo" />
-          </Box>
-        </Flex>
+        ></Flex>
         <Heading as="h3" fontWeight="normal" size="lg" marginBottom="10px;">
           一覧から選ぶ
         </Heading>
         <SelectTableMusicList />
         <Button
-          colorScheme="blue"
+          bg="#3e4f89"
+          color="white"
           marginTop="20px"
           isDisabled={isStartButtonDisabled}
           onClick={handleStartClick}
