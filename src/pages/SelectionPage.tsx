@@ -32,7 +32,7 @@ const SelectionPage = () => {
         <SelectTableMusicList />
         <Button
           bg="#3e4f89"
-          color="white"
+          colorScheme="white"
           marginTop="50px"
           isDisabled={isStartButtonDisabled}
           onClick={handleStartClick}
