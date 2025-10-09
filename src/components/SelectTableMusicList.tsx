@@ -30,15 +30,23 @@ export const SelectTableMusicList = () => {
             flexDirection="column"
             justifyContent="space-between"
             cursor="pointer"
-            border={selectedMusic?.id === music.id ? "2px solid" : "none"}
+            border={selectedMusic?.id === music.id ? "2px solid" : "2px solid"}
             borderColor={
-              selectedMusic?.id === music.id ? "blue.500" : "transparent"
+              selectedMusic?.id === music.id ? "blue.500" : "gray.400"
             }
             transition="all 0.2s"
             _hover={{
               opacity: 0.8,
-              boxShadow: selectedMusic?.id === music.id ? "lg" : "md",
+              boxShadow:
+                selectedMusic?.id === music.id
+                  ? "0 0 0 3px blue.500 inset, 0px 4px 6px rgba(0, 0, 0, 0.1)"
+                  : "0 0 0 3px gray.300 inset, 0px 4px 6px rgba(0, 0, 0, 0.1)",
             }}
+            boxShadow={
+              selectedMusic?.id === music.id
+                ? "0 0 0 3px rgba(0, 0, 0, 0.1) inset"
+                : "0 0 0 3px rgba(0, 0, 0, 0.1) inset"
+            }
             onClick={() => handleSelect(music)}
           >
             <Box>
