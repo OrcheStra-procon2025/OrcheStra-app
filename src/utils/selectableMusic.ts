@@ -9,14 +9,20 @@ export const selectableMusic = [
   },
   {
     id: 2,
-    title: "春",
-    artist: "アントニオ・ヴィヴァルディ",
-    path: MUSIC_ROOT + "Spring.mp3",
+    title: "ボレロ",
+    artist: "モーリス・ラヴェル",
+    path: MUSIC_ROOT + "bolero.mp3",
   },
   {
     id: 3,
-    title: "子犬のワルツ",
-    artist: "フレデリック・ショパン",
-    path: MUSIC_ROOT + "MinuteWaltz.mp3",
+    title: "歓喜の歌",
+    artist: "ルートヴィヒ・ヴァン・ベートーヴェン",
+    path: MUSIC_ROOT + "OdetoJoy.mp3",
+  },
+  {
+    id: 4,
+    title: "ヴルタヴァ（モルダウ）",
+    artist: "ベドルジハ・スメタナ",
+    path: MUSIC_ROOT + "Vltava.mp3",
   },
 ];
