@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import {
   Box,
   VStack,
@@ -20,16 +20,6 @@ import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
 
 const PlayingPage = () => {
   const navigate = useNavigate();
-  useEffect(() => {
-    const socket = new WebSocket("ws://10.76.190.56"); // 仮
-    socket.addEventListener("open", () => {
-      console.log("WS connected!");
-    });
-    socket.addEventListener("message", (event) => {
-      const accel_info = JSON.parse(event.data);
-      console.log(accel_info);
-    });
-  }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate

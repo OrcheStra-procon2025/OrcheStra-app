@@ -4,11 +4,19 @@ import { faPlay } from "@fortawesome/free-solid-svg-icons";
 import { SelectTableMusicList } from "@/components/SelectTableMusicList";
 import { useGlobalParams } from "@/context/useGlobalParams";
 import { useNavigate } from "react-router-dom";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import { useEffect } from "react";
 
 const SelectionPage = () => {
   const { selectedMusic } = useGlobalParams();
   const isStartButtonDisabled = !selectedMusic;
   const navigate = useNavigate();
+
+  const { connectWebSocket } = useWebSocket();
+
+  useEffect(() => {
+    connectWebSocket();
+  }, []);
 
   const handleStartClick = () => {
     if (!isStartButtonDisabled) {
