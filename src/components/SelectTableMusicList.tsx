@@ -15,7 +15,7 @@ export const SelectTableMusicList = () => {
       <Flex
         gap="25px"
         flexWrap="wrap"
-        maxWidth="1200px"
+        maxWidth="1000px"
         justifyContent="center"
       >
         {selectableMusic.map((music: MusicDataModel) => (
@@ -29,6 +29,7 @@ export const SelectTableMusicList = () => {
             display="flex"
             flexDirection="column"
             justifyContent="space-between"
+            userSelect="none"
             cursor="pointer"
             border={selectedMusic?.id === music.id ? "2px solid" : "2px solid"}
             borderColor={
