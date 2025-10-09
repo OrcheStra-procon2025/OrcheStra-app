@@ -22,7 +22,7 @@ export const selectableMusic = [
   {
     id: 4,
     title: "ヴルタヴァ（モルダウ）",
-    artist: "ルートヴィヒ・ヴァン・ベートーヴェン",
+    artist: "ベドルジハ・スメタナ",
     path: MUSIC_ROOT + "Vltava.mp3",
   },
 ];
