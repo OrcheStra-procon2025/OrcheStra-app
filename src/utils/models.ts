@@ -19,9 +19,19 @@ type MusicDataModel = {
   path: string;
 };
 
+type AccelDataModel = {
+  acc_x: number;
+  acc_y: number;
+  acc_z: number;
+  gyro_x: number;
+  gyro_y: number;
+  gyro_z: number;
+};
+
 export type {
   NormalizedLandmark,
   NormalizedLandmarkList,
   ScalerInfoModel,
   MusicDataModel,
+  AccelDataModel,
 };

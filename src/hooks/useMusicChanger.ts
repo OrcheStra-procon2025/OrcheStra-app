@@ -4,19 +4,20 @@ import {
   calculatePlaybackRate,
   calculateVolumeRate,
 } from "@/utils/musicChanger";
+import type { AccelDataModel } from "@/utils/models";
 
 interface MusicChanger {
   startChanging: (musicPath: string) => Promise<void>;
-  processAccelInfo: (player: GrainPlayer, accel_info: any) => void;
+  processAccelInfo: (player: GrainPlayer, accel_info: AccelDataModel) => void;
 }
 
 const STOPBEAT_THRESHOLD = 2.8;
 const STARTBEAT_THRESHOLD = 4.0;
 
-let pendingSumAcc: any[] = []; // 今回検出した拍についてのSumAcc
+let pendingSumAcc: number[] = []; // 今回検出した拍についてのSumAcc
 let beforeSumAcc: number | null = null; // 前回に検出した拍についてのSumAcc
 let detectingSumAcc: number[] = []; // 現在検出中（継続中）の拍についてのSumAcc
-let accelQueue: number[][] = []; // 加速度情報処理用のキュー
+const accelQueue: [number, number | null][] = []; // 加速度情報処理用のキュー
 let isProcessingAccelQueue: boolean = false; // ↑のロック
 let origBPM: number | null = null; // 原曲のBPM（再生前に算出）
 let detectingBeat: boolean = false; // 現在拍が検出中（継続中）であるかどうか
@@ -74,7 +75,10 @@ export const useMusicChanger = (): MusicChanger => {
     console.debug("updated origBPM!");
   };
 
-  const processAccelInfo = (player: GrainPlayer, accel_info: any) => {
+  const processAccelInfo = (
+    player: GrainPlayer,
+    accel_info: AccelDataModel,
+  ) => {
     const sum_acc =
       Math.abs(accel_info.acc_x) +
       Math.abs(accel_info.acc_y) +

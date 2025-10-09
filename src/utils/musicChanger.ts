@@ -50,6 +50,7 @@ export function calculatePlaybackRate(orig_bpm: number): number | void {
     }
     console.log("BPM: " + calculatedBPM);
     console.log(calculatedBPM / orig_bpm);
+    lastBPM = calculatedBPM;
     return calculatedBPM / orig_bpm;
   }
 }
