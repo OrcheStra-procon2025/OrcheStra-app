@@ -15,8 +15,20 @@ export const selectableMusic = [
   },
   {
     id: 3,
-    title: "子犬のワルツ",
-    artist: "フレデリック・ショパン",
-    path: MUSIC_ROOT + "MinuteWaltz.mp3",
+    title: "ボレロ",
+    artist: "モーリス・ラヴェル",
+    path: MUSIC_ROOT + "bolero.mp3",
+  },
+  {
+    id: 4,
+    title: "Ode to Joy",
+    artist: "ルートヴィヒ・ヴァン・ベートーヴェン",
+    path: MUSIC_ROOT + "OdetoJoy.mp3",
+  },
+  {
+    id: 5,
+    title: "ヴルタヴァ（モルダウ）",
+    artist: "ルートヴィヒ・ヴァン・ベートーヴェン",
+    path: MUSIC_ROOT + "Vltava.mp3",
   },
 ];

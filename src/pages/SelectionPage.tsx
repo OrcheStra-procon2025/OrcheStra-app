@@ -26,7 +26,7 @@ const SelectionPage = () => {
           gap="30px"
           marginBottom="20px"
         ></Flex>
-        <Heading as="h3" fontWeight="normal" size="lg" marginBottom="10px;">
+        <Heading as="h3" fontWeight="normal" size="lg" marginBottom="10px">
           一覧から選ぶ
         </Heading>
         <SelectTableMusicList />

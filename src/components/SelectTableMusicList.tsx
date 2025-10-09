@@ -12,14 +12,23 @@ export const SelectTableMusicList = () => {
 
   return (
     <>
-      <Flex gap="25px" flexWrap="wrap">
+      <Flex
+        gap="25px"
+        flexWrap="wrap"
+        maxWidth="1200px"
+        justifyContent="center"
+      >
         {selectableMusic.map((music: MusicDataModel) => (
-          <Box // ← ここから JSX を記述
+          <Box
             key={music.id}
             bg={selectedMusic?.id === music.id ? "blue.100" : "gray.200"}
             p="4"
             borderRadius="md"
-            minWidth="200px"
+            width="360px"
+            height="120px"
+            display="flex"
+            flexDirection="column"
+            justifyContent="space-between"
             cursor="pointer"
             border={selectedMusic?.id === music.id ? "2px solid" : "none"}
             borderColor={
@@ -32,10 +41,19 @@ export const SelectTableMusicList = () => {
             }}
             onClick={() => handleSelect(music)}
           >
-            <Text fontSize="2xl">{music.title}</Text>
-            <Box as="span" style={{ textAlign: "right" }}>
-              <Text fontSize="md">{music.artist}</Text>
+            <Box>
+              <Text fontSize="3xl">{music.title}</Text>
             </Box>
+            <Text
+              fontSize="md"
+              textAlign="right"
+              color="#7e7d7dff"
+              wordBreak="break-word"
+              maxW="300px"
+              alignSelf="flex-end"
+            >
+              {music.artist}
+            </Text>
           </Box>
         ))}
       </Flex>
