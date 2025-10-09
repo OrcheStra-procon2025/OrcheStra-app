@@ -12,16 +12,9 @@ import { useGlobalParams } from "@/context/useGlobalParams";
 import { useNavigate } from "react-router-dom";
 import { useAiAnalyzer } from "@/hooks/useAiAnalyzer";
 import { CompetitiveProgressBar } from "@/components/CompetitiveProgressBar";
+import type { ProgressBarData } from "@/utils/models";
 // ProgressBarDataのインポートを削除
 // import type { ProgressBarData } from "@/utils/models";
-
-// --- ここに ProgressBarData の定義を追加 ---
-interface ProgressBarData {
-  labelLeft: string;
-  labelRight: string;
-  value: number;
-}
-// -----------------------------------------
 
 const ResultPage = () => {
   const navigate = useNavigate();

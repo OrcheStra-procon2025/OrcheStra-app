@@ -19,9 +19,16 @@ type MusicDataModel = {
   path: string;
 };
 
+interface ProgressBarData {
+  labelLeft: string;
+  labelRight: string;
+  value: number;
+}
+
 export type {
   NormalizedLandmark,
   NormalizedLandmarkList,
   ScalerInfoModel,
   MusicDataModel,
+  ProgressBarData,
 };
