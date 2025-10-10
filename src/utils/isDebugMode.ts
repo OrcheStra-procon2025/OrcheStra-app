@@ -1,1 +1,1 @@
-export const IS_DEBUG_MODE: boolean = true;
+export const IS_DEBUG_MODE: boolean = false;
