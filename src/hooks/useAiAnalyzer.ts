@@ -6,7 +6,9 @@ import { computeLabelWeights, computeWeightedAverageProbs, calculateAllDynamics,
 import { calculateScoresAndProgressBarData, generateFeedbackText } from "@/utils/aiScoring";
 
 interface AiAnalyzerResult {
-  analyze: (poseData: NormalizedLandmarkList[]) => Promise<{ feedbackText: string; progressBarData: ProgressBarData[] }>;
+  analyze: (
+    poseData: NormalizedLandmarkList[],
+  ) => Promise<{ feedbackText: string; progressBarData: ProgressBarData[] }>;
   isLoading: boolean;
   isAnalyzing: boolean;
   error: string | null;
