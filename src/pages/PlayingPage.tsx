@@ -46,7 +46,7 @@ const PlayingPage = () => {
   } = useVisionController(videoRef.current);
 
   const { startChanging, processAccelInfo } = useMusicChanger();
-  const { registerOnMessage } = useWebSocket();
+  const { registerOnMessage, removeOnMessage } = useWebSocket();
 
   const isReady =
     isPlayerReady &&
@@ -116,6 +116,7 @@ const PlayingPage = () => {
   const handleStop = async () => {
     if (!isDetecting) return;
     stopMusic();
+    removeOnMessage();
     stopDetection();
     navigate("/result");
   };
