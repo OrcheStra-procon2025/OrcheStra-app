@@ -44,7 +44,7 @@ export const calculateScoresAndProgressBarData = (
       value: applyContrast(movementScore)
     },
     { 
-      labelLeft: "単調な表現",
+      labelLeft: "細かな表現",
       labelRight: "豊かな表現", 
       value: applyContrast(expressionScore) 
     },
