@@ -28,10 +28,17 @@ type AccelDataModel = {
   gyro_z: number;
 };
 
+interface ProgressBarData {
+  labelLeft: string;
+  labelRight: string;
+  value: number;
+}
+
 export type {
   NormalizedLandmark,
   NormalizedLandmarkList,
   ScalerInfoModel,
   MusicDataModel,
   AccelDataModel,
+  ProgressBarData,
 };

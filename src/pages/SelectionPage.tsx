@@ -34,16 +34,19 @@ const SelectionPage = () => {
           gap="30px"
           marginBottom="20px"
         ></Flex>
-        <Heading as="h3" fontWeight="normal" size="lg" marginBottom="10px;">
+        <Heading as="h3" fontWeight="normal" size="lg" marginBottom="30px">
           一覧から選ぶ
         </Heading>
         <SelectTableMusicList />
         <Button
           bg="#3e4f89"
-          color="white"
-          marginTop="20px"
+          colorScheme="white"
+          marginTop="50px"
           isDisabled={isStartButtonDisabled}
           onClick={handleStartClick}
+          padding="20px"
+          paddingLeft="40px"
+          paddingRight="40px"
         >
           <FontAwesomeIcon icon={faPlay} style={{ marginRight: "10px" }} />
           スタート！
