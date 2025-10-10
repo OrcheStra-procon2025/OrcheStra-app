@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Box,
   VStack,
@@ -12,29 +12,28 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useVisionController } from "@/hooks/useVisionController";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
-import { useMusicPlayer } from "@/hooks/useMusicPlayer";
-import { useMusicChanger } from "@/hooks/useMusicChanger";
-import { useWebSocket } from "@/hooks/useWebSocket";
-import type { NormalizedLandmark } from "@/utils/models";
+import { useConductingMusicPlayer } from "@/hooks/useConductingMusicPlayer";
+import { useGlobalParams } from "@/context/useGlobalParams";
+import type { NormalizedLandmark, NormalizedLandmarkList } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
 
 const PlayingPage = () => {
   const navigate = useNavigate();
-
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate
+  const [countdown, setCountdown] = useState<number | null>(null);
 
-  // カスタムフック
+  // --- カスタムフック ---
+  const { selectedMusic } = useGlobalParams();
   const {
     isPlayerReady,
-    player,
-    musicPath,
     playMusic,
     stopMusic,
-    isError: musicError,
-  } = useMusicPlayer();
+    updateTempoFromPose,
+  } = useConductingMusicPlayer(selectedMusic?.path || null);
+
   const { cameraDevices, selectedDeviceId, isCameraReady, handleSelectChange } =
     useCameraSelector();
+
   const {
     isDetecting,
     isLoading: isVisionLoading,
@@ -45,52 +44,51 @@ const PlayingPage = () => {
     leftWrist,
   } = useVisionController(videoRef.current);
 
-  const { startChanging, processAccelInfo } = useMusicChanger();
-  const { registerOnMessage, removeOnMessage } = useWebSocket();
+  // useEffectを使って、手首の座標が更新されたらテンポ更新関数を呼び出す
+  useEffect(() => {
+    // 検出中で、両手首のデータがある場合のみ実行
+    if (isDetecting && rightWrist && leftWrist) {
+      // ▼▼▼ 変更点 ▼▼▼
+      // 空の配列として初期化
+      const currentPose: NormalizedLandmarkList = [];
+      
+      // 正しいインデックスにデータを格納
+      currentPose[15] = leftWrist;  // 15は左手首のインデックス
+      currentPose[16] = rightWrist; // 16は右手首のインデックス
 
-  const isReady =
-    isPlayerReady &&
-    isCameraReady &&
-    !isVisionLoading &&
-    !visionError &&
-    !musicError;
+      updateTempoFromPose(currentPose);
+      // ▲▲▲ 変更点 ▲▲▲
+    }
+  }, [rightWrist, leftWrist, isDetecting, updateTempoFromPose]);
+
+  const isReady = isPlayerReady && isCameraReady && !isVisionLoading && !visionError;
   const isDisabled = !isReady || !selectedDeviceId;
   const isCountingDown = countdown !== null;
 
   const getScreenCoord = (landmark: NormalizedLandmark | null) => {
     if (videoRef.current && isDetecting && landmark) {
       const videoRect = videoRef.current.getBoundingClientRect();
-
       const xInVideo = landmark.x * videoRect.width;
       const yInVideo = landmark.y * videoRect.height;
-
       const screenX = videoRect.left + xInVideo;
       const screenY = videoRect.top + yInVideo;
-
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
-
       const centeredX = centerX - screenX;
       const centeredY = screenY - centerY;
-
       return { screenX: centeredX, screenY: centeredY };
     }
     return { screenX: 0, screenY: 0 };
   };
 
-  const { screenX: rightWristX, screenY: rightWristY } =
-    getScreenCoord(rightWrist);
-  const { screenX: leftWristX, screenY: leftWristY } =
-    getScreenCoord(leftWrist);
+  const { screenX: rightWristX, screenY: rightWristY } = getScreenCoord(rightWrist);
+  const { screenX: leftWristX, screenY: leftWristY } = getScreenCoord(leftWrist);
 
   const disabledColor = "#A9A9A9";
 
   const handleStart = async () => {
     if (isDisabled || isDetecting || isCountingDown) return;
 
-    startChanging(musicPath!);
-
-    // 3秒のカウントダウン処理
     await new Promise<void>((resolve) => {
       setCountdown(3);
       const interval = setInterval(() => {
@@ -104,49 +102,33 @@ const PlayingPage = () => {
         });
       }, 1000);
     });
-
-    // カウントダウン後に検出と音楽再生を開始
+    
     await startDetection(selectedDeviceId);
     await playMusic();
-    registerOnMessage(async (data) => {
-      await processAccelInfo(player!, data);
-    });
   };
 
   const handleStop = async () => {
     if (!isDetecting) return;
     stopMusic();
-    removeOnMessage();
     stopDetection();
     navigate("/result");
   };
 
   const renderStatus = () => {
-    if (visionError) {
-      return <Text color="red.500">エラーが発生しました: {visionError}</Text>;
-    }
-    if (isVisionLoading) {
-      return <Text color="gray.500">指揮検出システムを準備中...</Text>;
-    }
-    if (!isCameraReady) {
-      return <Text color="gray.500">カメラアクセスを待機中...</Text>;
-    }
-    if (musicError) {
-      return <Text color="red.500">音楽ファイルの読み込みに失敗しました</Text>;
-    } else if (!isPlayerReady) {
-      return <Text color="gray.500">音楽ファイルを読み込み中...</Text>;
-    }
-
+    if (visionError) return <Text color="red.500">エラーが発生しました: {visionError}</Text>;
+    if (isVisionLoading) return <Text color="gray.500">指揮検出システムを準備中...</Text>;
+    if (!isCameraReady) return <Text color="gray.500">カメラアクセスを待機中...</Text>;
+    if (!isPlayerReady) return <Text color="gray.500">音楽ファイルを読み込み中...</Text>;
     return null;
   };
-
+  
   const getButtonText = () => {
     if (isDetecting) return "指揮中...";
     if (isCountingDown) return "開始...";
     if (isDisabled) return "準備中...";
     return "指揮を開始";
   };
-
+  
   return (
     <VStack paddingTop="10px">
       <Box
@@ -163,7 +145,6 @@ const PlayingPage = () => {
           bg="black"
           borderRadius="8px"
         >
-          {/* カウントダウン表示UI */}
           {isCountingDown && (
             <Center
               position="absolute"
