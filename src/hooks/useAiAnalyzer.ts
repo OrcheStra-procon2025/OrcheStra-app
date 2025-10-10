@@ -1,19 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import * as tf from "@tensorflow/tfjs";
-import type {
-  NormalizedLandmarkList,
-  ScalerInfoModel,
-} from "@/utils/models";
+import type { NormalizedLandmarkList, ScalerInfoModel } from "@/utils/models";
 
 interface ProgressBarData {
   labelLeft: string;
   labelRight: string;
   value: number;
-}
-
-interface StyleSegment {
-  style: string;
-  duration: number;
 }
 
 // --- 定数定義 ---
@@ -58,12 +50,6 @@ const STYLE_TO_CATEGORY_MAP: { [key: string]: string[] } = {
 };
 
 // --- ヘルパー関数群 ---
-const STYLE_GROUPS_REMAP: { [styleName: string]: number[] } = {};
-for (const id in ID_TO_STYLE_REMAP) {
-  const style = ID_TO_STYLE_REMAP[id];
-  if (!STYLE_GROUPS_REMAP[style]) STYLE_GROUPS_REMAP[style] = [];
-  STYLE_GROUPS_REMAP[style].push(parseInt(id));
-}
 
 const computeLabelWeights = (): number[] => {
   const counts: { [key: string]: number } = {};
@@ -83,39 +69,98 @@ const computeWeightedAverageProbs = (allProbs: number[][]): number[] => {
   if (!allProbs.length) return [];
   const numLabels = allProbs[0].length;
   const summed = new Array(numLabels).fill(0);
-  let totalWeight = 0;
+
   for (const probs of allProbs) {
     for (let i = 0; i < numLabels; i++) {
       summed[i] += probs[i] * LABEL_WEIGHTS[i];
     }
-    totalWeight += LABEL_WEIGHTS.reduce((a, b) => a + b, 0);
   }
-  return summed.map((s) => s / totalWeight);
+
+  const numChunks = allProbs.length;
+  const averaged = summed.map((s) => s / numChunks);
+
+  const totalProb = averaged.reduce((a, b) => a + b, 0);
+  if (totalProb === 0) return averaged;
+  return averaged.map(p => p / totalProb);
 };
 
-const calculateScoresAndProgressBarData = (probs: number[]): ProgressBarData[] => {
-  let slowSum = 0, fastSum = 0, smallSum = 0, largeSum = 0;
+// ★ 変更点: 物理的な動きを計算する関数を追加
+const calculateDynamics = (poseData: NormalizedLandmarkList[]): { movement: number } => {
+  if (poseData.length < 3) {
+    return { movement: 0 };
+  }
+
+  const keyJoints = [
+    KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST,
+    KEY_JOINTS_MEDIAPIPE.LEFT_WRIST,
+  ];
+
+  const velocities: number[] = [];
+  let totalDistance = 0;
+
+  for (let i = 1; i < poseData.length; i++) {
+    const prevFrame = poseData[i - 1];
+    const currentFrame = poseData[i];
+    let frameDistance = 0;
+    for (const jointId of keyJoints) {
+      const p1 = prevFrame[jointId];
+      const p2 = currentFrame[jointId];
+      if (p1 && p2) {
+        frameDistance += Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+      }
+    }
+    const frameVelocity = frameDistance / keyJoints.length;
+    velocities.push(frameVelocity);
+    totalDistance += frameDistance;
+  }
+
+  let totalAcceleration = 0;
+  for (let i = 1; i < velocities.length; i++) {
+    totalAcceleration += Math.abs(velocities[i] - velocities[i - 1]);
+  }
+
+  const avgVelocity = totalDistance / velocities.length / keyJoints.length;
+  const avgAcceleration = totalAcceleration / (velocities.length - 1);
+  
+  const MOVEMENT_VELOCITY_WEIGHT = 1.0;
+  const MOVEMENT_ACCELERATION_WEIGHT = 1.5;
+  const movementScore = (avgVelocity * MOVEMENT_VELOCITY_WEIGHT) + (avgAcceleration * MOVEMENT_ACCELERATION_WEIGHT);
+
+  const NORMALIZATION_SCALE = 0.05; 
+  const normalizedMovement = Math.min(1.0, movementScore / NORMALIZATION_SCALE);
+
+  return { movement: normalizedMovement * 100 };
+};
+
+// --- スコア算出 ---
+// ★ 変更点: 引数にdynamicsScoreを追加し、ロジックを全面的に見直し
+const calculateScoresAndProgressBarData = (
+  probs: number[],
+  dynamicsScore: number
+): ProgressBarData[] => {
+  let slowSum = 0,
+    fastSum = 0,
+    smallSum = 0,
+    largeSum = 0;
   for (let i = 0; i < probs.length; i++) {
     const style = ID_TO_STYLE_REMAP[i];
     const categories = STYLE_TO_CATEGORY_MAP[style] || [];
-    const prob = Math.pow(Math.log1p(probs[i] * 15), 2.5);
+    const prob = probs[i];
     if (categories.includes("slow")) slowSum += prob;
     if (categories.includes("fast")) fastSum += prob;
     if (categories.includes("small")) smallSum += prob;
     if (categories.includes("large")) largeSum += prob;
   }
   
-  const TEMPO_BALANCE_FACTOR = 0.7; 
-  const SIZE_BALANCE_FACTOR = 0.8;
-
-  fastSum *= TEMPO_BALANCE_FACTOR;
-  largeSum *= SIZE_BALANCE_FACTOR;
-  
+  // 1. テンポの評価 (AI)
   const tempoTotal = slowSum + fastSum;
-  const sizeTotal = smallSum + largeSum;
+  const tempoScore = tempoTotal > 0 ? (fastSum / tempoTotal) * 100 : 50;
 
-  const tempo = tempoTotal > 0 ? (fastSum / tempoTotal) * 100 : 50;
-  const size = sizeTotal > 0 ? (largeSum / sizeTotal) * 100 : 50;
+  // 2. 表現の評価 (AI)
+  const expressionTotal = smallSum + largeSum;
+  const expressionScore = expressionTotal > 0 ? (largeSum / expressionTotal) * 100 : 50;
+  
+  // 3. 動きの評価 (物理) - dynamicsScoreをそのまま使用
 
   const applyContrast = (value: number): number => {
     const normalized = value / 100;
@@ -125,36 +170,54 @@ const calculateScoresAndProgressBarData = (probs: number[]): ProgressBarData[] =
   };
 
   const bars: ProgressBarData[] = [
-    { labelLeft: "落ち着き", labelRight: "華やか", value: applyContrast(tempo) },
-    { labelLeft: "穏やか", labelRight: "速い", value: applyContrast((tempo + size) / 2) },
-    { labelLeft: "繊細", labelRight: "力強い", value: applyContrast(size) },
+    {
+      labelLeft: "流麗な",
+      labelRight: "リズミカルな",
+      value: applyContrast(tempoScore),
+    },
+    { 
+      labelLeft: "単調な表現",
+      labelRight: "豊かな表現", 
+      value: applyContrast(expressionScore) 
+    },
+    { 
+      labelLeft: "小さな動き",
+      labelRight: "大きな動き", 
+      value: applyContrast(dynamicsScore)
+    },
   ];
-
-  bars.forEach((b) => {
-    const jitter = (Math.random() - 0.5) * 10;
-    b.value = Math.min(100, Math.max(0, b.value + jitter));
-  });
 
   return bars;
 };
 
+// ★ 変更点: 3つの指標を基にしたフィードバックに変更
 const generateFeedbackText = (bars: ProgressBarData[]): string => {
-  const tempo = bars[1]?.value || 50;
-  const size = bars[2]?.value || 50;
-  if (tempo > 60 && size > 60) return "全体的に力強くテンポ感のある指揮でした。";
-  if (tempo < 40 && size < 40) return "全体的に穏やかで繊細な指揮でした。";
-  if (tempo > 60 && size < 40) return "速いテンポながらも繊細さが際立っていました。";
-  if (tempo < 40 && size > 60) return "ゆったりしながらも力強さを感じる指揮でした。";
-  return "全体としてバランスの取れた指揮でした。";
+  const expression = bars[1]?.value || 50;
+  const dynamics = bars[2]?.value || 50;
+
+  if (expression > 60 && dynamics > 60) {
+      return "表現力豊かで、動きもダイナミックな素晴らしい指揮です！";
+  } else if (expression > 60 && dynamics < 40) {
+      return "細やかな表現は素晴らしいですが、もう少し動きを大きくすると情熱がより伝わります。";
+  } else if (expression < 40 && dynamics > 60) {
+      return "動きは非常にエネルギッシュです。表現にもっと抑揚をつけるとさらに良くなります。";
+  } else if (expression < 40 && dynamics < 40) {
+      return "全体的にコンパクトな指揮です。もっと自信を持って、表現も動きも大きくしてみましょう！";
+  } else {
+    return "全体としてバランスの取れた指揮でした。";
+  }
 };
 
 const preprocessData = (
   landmarks: NormalizedLandmarkList,
-  scaler: ScalerInfoModel
+  scaler: ScalerInfoModel,
 ): number[] => {
-  const rh = landmarks[16], lh = landmarks[15], re = landmarks[14], le = landmarks[13];
+  const rh = landmarks[16],
+    lh = landmarks[15],
+    re = landmarks[14],
+    le = landmarks[13];
   if (!rh || !lh || !re || !le) return Array(12).fill(0);
-  const raw = [rh.x, rh.y, rh.z, lh.x, lh.y, lh.z, re.x, re.y, re.z, le.x, le.y, le.z];
+  const raw = [ rh.x, rh.y, rh.z, lh.x, lh.y, lh.z, re.x, re.y, re.z, le.x, le.y, le.z ];
   return raw.map((v, i) => (v - scaler.mean[i]) / scaler.scale[i]);
 };
 
@@ -182,9 +245,10 @@ const smoothLandmarks = (poseData: NormalizedLandmarkList[], windowSize = 5) => 
   });
 };
 
-
 interface AiAnalyzerResult {
-  analyze: (poseData: NormalizedLandmarkList[]) => Promise<{ feedbackText: string; progressBarData: ProgressBarData[] }>;
+  analyze: (
+    poseData: NormalizedLandmarkList[],
+  ) => Promise<{ feedbackText: string; progressBarData: ProgressBarData[] }>;
   isLoading: boolean;
   isAnalyzing: boolean;
   error: string | null;
@@ -227,11 +291,12 @@ export const useAiAnalyzer = (): AiAnalyzerResult => {
     try {
       const smoothed = smoothLandmarks(fullPoseData);
       
-      const SEQ_LEN = 60;  // 150から60に変更
-      const STRIDE = 30;   // 75から30に変更 (SEQ_LENの半分)
+      // ★ 変更点: 物理的な動きを計算
+      const dynamics = calculateDynamics(smoothed);
 
+      const SEQ_LEN = 60;
+      const STRIDE = 30;
       const allProbs: number[][] = [];
-      let lastProcessedIndex = -1;
 
       for (let i = 0; i <= smoothed.length - SEQ_LEN; i += STRIDE) {
         const chunk = smoothed.slice(i, i + SEQ_LEN);
@@ -239,19 +304,6 @@ export const useAiAnalyzer = (): AiAnalyzerResult => {
 
         const probs = tf.tidy(() => {
           const input = tf.tensor3d([processedChunk]);
-          const output = aiModel.predict(input) as tf.Tensor;
-          return Array.from(output.dataSync());
-        });
-        allProbs.push(probs);
-        lastProcessedIndex = i;
-      }
-
-      if (smoothed.length > SEQ_LEN && lastProcessedIndex + SEQ_LEN < smoothed.length) {
-        const finalChunk = smoothed.slice(smoothed.length - SEQ_LEN);
-        const processedFinalChunk = finalChunk.map(frame => preprocessData(frame, scalerInfo));
-
-        const probs = tf.tidy(() => {
-          const input = tf.tensor3d([processedFinalChunk]);
           const output = aiModel.predict(input) as tf.Tensor;
           return Array.from(output.dataSync());
         });
@@ -278,7 +330,8 @@ export const useAiAnalyzer = (): AiAnalyzerResult => {
       }
 
       const weightedProbs = computeWeightedAverageProbs(allProbs);
-      const progressBarData = calculateScoresAndProgressBarData(weightedProbs);
+      // ★ 変更点: dynamics.movementを渡す
+      const progressBarData = calculateScoresAndProgressBarData(weightedProbs, dynamics.movement);
       const feedbackText = generateFeedbackText(progressBarData);
 
       return { feedbackText, progressBarData };
