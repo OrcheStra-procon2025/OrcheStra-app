@@ -1,57 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useRef, useCallback } from "react";
 import * as Tone from "tone";
 import type { NormalizedLandmarkList } from "@/utils/models";
 import { KEY_JOINTS_MEDIAPIPE } from "@/utils/aiConstants";
 
-interface ConductingMusicPlayer {
-  isPlayerReady: boolean;
-  playMusic: () => Promise<void>;
-  stopMusic: () => void;
-  updateTempoFromPose: (pose: NormalizedLandmarkList) => void;
+interface VolumeChanger {
+  updateVolumeFromPose: (pose: NormalizedLandmarkList, player: Tone.GrainPlayer) => void;
 }
 
-export const useConductingMusicPlayer = (musicPath: string | null): ConductingMusicPlayer => {
-  const playerRef = useRef<Tone.Player | null>(null);
-  const [isPlayerReady, setIsPlayerReady] = useState(false);
-  
+export const useVolumeChanger = (): VolumeChanger => {
+
   const lastPoseRef = useRef<NormalizedLandmarkList | null>(null);
   const lastVelocityRef = useRef<number>(0);
   const accelerationsRef = useRef<number[]>([]);
 
-  useEffect(() => {
-    playerRef.current?.dispose();
-    setIsPlayerReady(false);
-    if (!musicPath) return;
-
-    try {
-      const player = new Tone.Player({
-        url: musicPath,
-        loop: true,
-        onload: () => setIsPlayerReady(true),
-      }).toDestination();
-      playerRef.current = player;
-    } catch (error) {
-      console.error("Tone.Playerの作成に失敗しました:", error);
-    }
-
-    // ▼▼▼ 変更点 ▼▼▼
-    return () => {
-      playerRef.current?.dispose();
-    };
-    // ▲▲▲ 変更点 ▲▲▲
-  }, [musicPath]);
-
-  const playMusic = useCallback(async () => {
-    if (Tone.context.state !== "running") await Tone.start();
-    if (playerRef.current && isPlayerReady) playerRef.current.start();
-  }, [isPlayerReady]);
-
-  const stopMusic = useCallback(() => {
-    if (playerRef.current) playerRef.current.stop();
-  }, []);
-
-  const updateTempoFromPose = useCallback((currentPose: NormalizedLandmarkList) => {
-    const player = playerRef.current;
+  const updateVolumeFromPose = useCallback((currentPose: NormalizedLandmarkList, player: Tone.GrainPlayer) => {
     if (!player || player.state !== "started" || !lastPoseRef.current) {
       lastPoseRef.current = currentPose;
       return;
@@ -98,5 +60,5 @@ export const useConductingMusicPlayer = (musicPath: string | null): ConductingMu
     lastVelocityRef.current = currentVelocity;
   }, []);
 
-  return { isPlayerReady, playMusic, stopMusic, updateTempoFromPose };
+  return { updateVolumeFromPose };
 };
