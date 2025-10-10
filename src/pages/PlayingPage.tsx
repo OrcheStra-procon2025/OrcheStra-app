@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import {
   Box,
   VStack,
@@ -13,21 +13,13 @@ import { useNavigate } from "react-router-dom";
 import { useVisionController } from "@/hooks/useVisionController";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
 import { useMusicPlayer } from "@/hooks/useMusicPlayer";
+import { useMusicChanger } from "@/hooks/useMusicChanger";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import type { NormalizedLandmark } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
 
 const PlayingPage = () => {
   const navigate = useNavigate();
-  useEffect(() => {
-    const socket = new WebSocket("ws://10.76.190.56"); // 仮
-    socket.addEventListener("open", () => {
-      console.log("WS connected!");
-    });
-    socket.addEventListener("message", (event) => {
-      const accel_info = JSON.parse(event.data);
-      console.log(accel_info);
-    });
-  }, []);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate
@@ -35,6 +27,8 @@ const PlayingPage = () => {
   // カスタムフック
   const {
     isPlayerReady,
+    player,
+    musicPath,
     playMusic,
     stopMusic,
     isError: musicError,
@@ -50,6 +44,9 @@ const PlayingPage = () => {
     rightWrist,
     leftWrist,
   } = useVisionController(videoRef.current);
+
+  const { startChanging, processAccelInfo } = useMusicChanger();
+  const { registerOnMessage, removeOnMessage } = useWebSocket();
 
   const isReady =
     isPlayerReady &&
@@ -91,6 +88,8 @@ const PlayingPage = () => {
   const handleStart = async () => {
     if (isDisabled || isDetecting || isCountingDown) return;
 
+    startChanging(musicPath!);
+
     // 3秒のカウントダウン処理
     await new Promise<void>((resolve) => {
       setCountdown(3);
@@ -109,11 +108,15 @@ const PlayingPage = () => {
     // カウントダウン後に検出と音楽再生を開始
     await startDetection(selectedDeviceId);
     await playMusic();
+    registerOnMessage(async (data) => {
+      await processAccelInfo(player!, data);
+    });
   };
 
   const handleStop = async () => {
     if (!isDetecting) return;
     stopMusic();
+    removeOnMessage();
     stopDetection();
     navigate("/result");
   };
