@@ -1,5 +1,6 @@
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Text, Image } from "@chakra-ui/react";
 import { useEffect, useState, useRef, useCallback } from "react";
+import OrcheStraIon from "@/assets/OS.png";
 
 // アニメーションにかける時間
 const DURATION: number = 2000;
@@ -36,15 +37,18 @@ export const CompetitiveProgressBar = ({
       const elapsed = Date.now() - startTime;
 
       if (elapsed < stageDuration) {
+        // Stage 1: 50%から100%近くまで上昇
         const progress = elapsed / stageDuration;
         const newValue = 50 + 50 * progress + Math.random() * 5;
         setDisplayValue(Math.min(100, Math.max(0, newValue)));
       } else if (elapsed < stageDuration * 2) {
+        // Stage 2: 100%近くから0%近くまで下降
         const stageElapsed = elapsed - stageDuration;
         const progress = stageElapsed / stageDuration;
         const newValue = 100 * (1 - progress) + Math.random() * 5;
         setDisplayValue(Math.min(100, Math.max(0, newValue)));
       } else if (elapsed < totalDuration) {
+        // Stage 3: 0%近くから最終値へ収束
         const stageElapsed = elapsed - stageDuration * 2;
         const progress = stageElapsed / stageDuration;
 
@@ -73,7 +77,7 @@ export const CompetitiveProgressBar = ({
 
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        clearInterval(intervalRef.current as number | NodeJS.Timeout);
       }
     };
   }, [isCurrentAnimating, isFinished, startProgressAnimation]);
@@ -89,39 +93,57 @@ export const CompetitiveProgressBar = ({
       pl="10"
       pr="10"
     >
-      <Box display="flex" justifyContent="space-between" mb={1}>
-        <Text fontSize="sm" fontWeight="bold" color="blue.600">
-          {labelLeft}
-        </Text>
-        <Text fontSize="sm" fontWeight="bold" color="red.600">
-          {labelRight}
-        </Text>
-      </Box>
-      <Box
-        height="12px"
-        bg="gray.300"
-        borderRadius="full"
-        overflow="hidden"
-        width="100%"
-        position="relative"
-      >
+      {/* ラベルとバーを横並びにするためのFlexコンテナ */}
+      <Box display="flex" alignItems="center" mb={1}>
+        {/* 左側のラベル領域 (20%) */}
+        <Box width="100px" textAlign="center" flexShrink={0} mr={2}>
+          <Text fontSize="sm" fontWeight="bold" color="blue.600">
+            {labelLeft}
+          </Text>
+        </Box>
+
         <Box
-          height="100%"
-          width={`${barWidth}%`}
+          height="12px"
+          borderRadius="full"
+          width="60%"
+          position="relative"
           background="linear-gradient(to right, #4299e1 0%, #63b3ed 30%, #f687b3 70%, #e53e3e 100%)"
-          backgroundSize={`${(100 / barWidth) * 100}% 100%`}
-          transition={
-            isFinished || (isCurrentAnimating && !intervalRef.current)
-              ? "none"
-              : "width 0.03s linear"
-          }
-          style={{
-            transformOrigin: "left",
-          }}
-        />
+          flexGrow={1}
+        >
+          <Box
+            position="absolute"
+            top="50%"
+            transform="translate(-50%, -50%)"
+            zIndex="1"
+            width="55px"
+            height="55px"
+            left={`${barWidth}%`}
+            transition={
+              isFinished || (isCurrentAnimating && !intervalRef.current)
+                ? "none"
+                : "left 0.03s linear"
+            }
+          >
+            <Image
+              src={OrcheStraIon}
+              alt="OrcheStra Icon"
+              width="100%"
+              height="100%"
+              objectFit="contain"
+            />
+          </Box>
+        </Box>
+
+        <Box width="100px" textAlign="center" flexShrink={0} ml={2}>
+          <Text fontSize="sm" fontWeight="bold" color="red.600">
+            {labelRight}
+          </Text>
+        </Box>
       </Box>
+
+      {/* 数値表示 */}
       <Text mt={2} textAlign="center" fontSize="lg" fontWeight="extrabold">
-        {`${barWidth}%`}
+        {`${(barWidth - 50) * 2}%`}
       </Text>
     </Box>
   );

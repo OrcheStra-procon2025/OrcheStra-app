@@ -6,6 +6,8 @@ export type ParameterContextType = {
   updateSelectedMusic: (music: MusicDataModel | null) => void;
   poseDataList: NormalizedLandmarkList[];
   updatePoseDataList: (poseList: NormalizedLandmarkList[]) => void;
+  webSocketObject: WebSocket | null;
+  updateWebSocketObject: (ws: WebSocket | null) => void;
 };
 
 export const ParameterContext = createContext<ParameterContextType | null>(

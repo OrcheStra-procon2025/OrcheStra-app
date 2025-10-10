@@ -7,6 +7,7 @@ export const ParameterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedMusic, setSelectedMusic] = useState<MusicDataModel | null>(
     null,
   );
+  const [webSocketObject, setWebSocketObject] = useState<WebSocket | null>(null);
   const [poseDataList, setPoseDataList] = useState<NormalizedLandmarkList[]>(
     [],
   );
@@ -17,12 +18,17 @@ export const ParameterProvider = ({ children }: { children: ReactNode }) => {
   const updatePoseDataList = (poseList: NormalizedLandmarkList[]) => {
     setPoseDataList(poseList);
   };
+  const updateWebSocketObject = (ws: WebSocket | null) => {
+    setWebSocketObject(ws);
+  };
 
   const value: ParameterContextType = {
     selectedMusic,
     updateSelectedMusic,
     poseDataList,
     updatePoseDataList,
+    webSocketObject,
+    updateWebSocketObject,
   };
 
   return (

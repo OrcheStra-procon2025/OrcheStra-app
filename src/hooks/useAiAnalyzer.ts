@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import * as tf from "@tensorflow/tfjs";
-import type { NormalizedLandmarkList, ScalerInfoModel } from "@/utils/models";
-
-interface ProgressBarData {
-  labelLeft: string;
-  labelRight: string;
-  value: number;
-}
+import type {
+  NormalizedLandmarkList,
+  ScalerInfoModel,
+  ProgressBarData,
+} from "@/utils/models";
 
 // --- 定数定義 ---
 const KEY_JOINTS_MEDIAPIPE = {
@@ -84,7 +82,6 @@ const computeWeightedAverageProbs = (allProbs: number[][]): number[] => {
   return averaged.map(p => p / totalProb);
 };
 
-// ★ 変更点: 物理的な動きを計算する関数を追加
 const calculateDynamics = (poseData: NormalizedLandmarkList[]): { movement: number } => {
   if (poseData.length < 3) {
     return { movement: 0 };
@@ -133,7 +130,6 @@ const calculateDynamics = (poseData: NormalizedLandmarkList[]): { movement: numb
 };
 
 // --- スコア算出 ---
-// ★ 変更点: 引数にdynamicsScoreを追加し、ロジックを全面的に見直し
 const calculateScoresAndProgressBarData = (
   probs: number[],
   dynamicsScore: number
@@ -190,7 +186,6 @@ const calculateScoresAndProgressBarData = (
   return bars;
 };
 
-// ★ 変更点: 3つの指標を基にしたフィードバックに変更
 const generateFeedbackText = (bars: ProgressBarData[]): string => {
   const expression = bars[1]?.value || 50;
   const dynamics = bars[2]?.value || 50;
@@ -210,12 +205,9 @@ const generateFeedbackText = (bars: ProgressBarData[]): string => {
 
 const preprocessData = (
   landmarks: NormalizedLandmarkList,
-  scaler: ScalerInfoModel,
+  scaler: ScalerInfoModel
 ): number[] => {
-  const rh = landmarks[16],
-    lh = landmarks[15],
-    re = landmarks[14],
-    le = landmarks[13];
+  const rh = landmarks[16], lh = landmarks[15], re = landmarks[14], le = landmarks[13];
   if (!rh || !lh || !re || !le) return Array(12).fill(0);
   const raw = [ rh.x, rh.y, rh.z, lh.x, lh.y, lh.z, re.x, re.y, re.z, le.x, le.y, le.z ];
   return raw.map((v, i) => (v - scaler.mean[i]) / scaler.scale[i]);
@@ -245,10 +237,9 @@ const smoothLandmarks = (poseData: NormalizedLandmarkList[], windowSize = 5) => 
   });
 };
 
+
 interface AiAnalyzerResult {
-  analyze: (
-    poseData: NormalizedLandmarkList[],
-  ) => Promise<{ feedbackText: string; progressBarData: ProgressBarData[] }>;
+  analyze: (poseData: NormalizedLandmarkList[]) => Promise<{ feedbackText: string; progressBarData: ProgressBarData[] }>;
   isLoading: boolean;
   isAnalyzing: boolean;
   error: string | null;
@@ -291,7 +282,6 @@ export const useAiAnalyzer = (): AiAnalyzerResult => {
     try {
       const smoothed = smoothLandmarks(fullPoseData);
       
-      // ★ 変更点: 物理的な動きを計算
       const dynamics = calculateDynamics(smoothed);
 
       const SEQ_LEN = 60;
@@ -330,7 +320,6 @@ export const useAiAnalyzer = (): AiAnalyzerResult => {
       }
 
       const weightedProbs = computeWeightedAverageProbs(allProbs);
-      // ★ 変更点: dynamics.movementを渡す
       const progressBarData = calculateScoresAndProgressBarData(weightedProbs, dynamics.movement);
       const feedbackText = generateFeedbackText(progressBarData);
 
