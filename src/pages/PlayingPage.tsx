@@ -17,11 +17,13 @@ import { useMusicChanger } from "@/hooks/useMusicChanger";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { NormalizedLandmark } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
+import { IS_DEBUG_MODE } from "@/utils/isDebugMode";
 
 const PlayingPage = () => {
   const navigate = useNavigate();
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [countdown, setCountdown] = useState<number | null>(null); // カウントダウン表示用のstate
 
   // カスタムフック
@@ -43,7 +45,10 @@ const PlayingPage = () => {
     stopDetection,
     rightWrist,
     leftWrist,
-  } = useVisionController(videoRef.current);
+  } = useVisionController(
+    videoRef.current,
+    IS_DEBUG_MODE ? canvasRef.current : null,
+  );
 
   const { startChanging, processAccelInfo } = useMusicChanger();
   const { registerOnMessage, removeOnMessage } = useWebSocket();
@@ -195,6 +200,20 @@ const PlayingPage = () => {
             borderRadius="8px"
             transform="scaleX(-1)"
           />
+          {IS_DEBUG_MODE && (
+            <chakra.canvas
+              id="overlayCanvas"
+              ref={canvasRef}
+              position="absolute"
+              top="0"
+              left="0"
+              width="100%"
+              height="100%"
+              borderRadius="8px"
+              bg="transparent"
+              transform="scaleX(-1)"
+            />
+          )}
           {isDetecting && rightWristX !== 0 && rightWristY !== 0 && (
             <ThreejsEffect x={rightWristX} y={rightWristY} />
           )}

@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
+import {
+  PoseLandmarker,
+  FilesetResolver,
+  DrawingUtils,
+} from "@mediapipe/tasks-vision";
 import type { PoseLandmarkerResult } from "@mediapipe/tasks-vision";
 import type {
   NormalizedLandmarkList,
@@ -24,6 +28,7 @@ const WASM_PATH =
 
 export const useVisionController = (
   videoElement: HTMLVideoElement | null,
+  canvasElement: HTMLCanvasElement | null = null,
 ): VisionController => {
   // 状態管理
   const { updatePoseDataList } = useGlobalParams();
@@ -88,6 +93,28 @@ export const useVisionController = (
         .landmarks[0] as NormalizedLandmarkList;
       setPoseDataRecorder((prevData) => [...prevData, currentLandmarks]);
 
+      if (canvasElement) {
+        const canvasCtx = canvasElement.getContext("2d");
+        if (!canvasCtx) return;
+
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        const drawingUtils = new DrawingUtils(canvasCtx);
+        for (const landmarks of poseResult.landmarks) {
+          drawingUtils.drawLandmarks(landmarks, {
+            color: "#E1D319",
+            radius: 5,
+          });
+          drawingUtils.drawConnectors(
+            landmarks,
+            PoseLandmarker.POSE_CONNECTIONS,
+            {
+              color: "#4A5E76",
+              lineWidth: 3,
+            },
+          );
+        }
+      }
+
       const rightWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.RIGHT_WRIST];
       const leftWrist = currentLandmarks[KEY_JOINTS_MEDIAPIPE.LEFT_WRIST];
       if (
@@ -112,7 +139,7 @@ export const useVisionController = (
     }
 
     window.requestAnimationFrame(detectionLoop);
-  }, [videoElement]);
+  }, [videoElement, canvasElement]);
 
   const startDetection = useCallback(
     async (deviceId: string) => {
