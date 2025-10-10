@@ -16,10 +16,12 @@ import { useConductingMusicPlayer } from "@/hooks/useConductingMusicPlayer";
 import { useGlobalParams } from "@/context/useGlobalParams";
 import type { NormalizedLandmark, NormalizedLandmarkList } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
+import { IS_DEBUG_MODE } from "@/utils/isDebugMode";
 
 const PlayingPage = () => {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
 
   // --- カスタムフック ---
@@ -42,7 +44,10 @@ const PlayingPage = () => {
     stopDetection,
     rightWrist,
     leftWrist,
-  } = useVisionController(videoRef.current);
+  } = useVisionController(
+    videoRef.current,
+    IS_DEBUG_MODE ? canvasRef.current : null,
+  );
 
   // useEffectを使って、手首の座標が更新されたらテンポ更新関数を呼び出す
   useEffect(() => {
@@ -176,6 +181,20 @@ const PlayingPage = () => {
             borderRadius="8px"
             transform="scaleX(-1)"
           />
+          {IS_DEBUG_MODE && (
+            <chakra.canvas
+              id="overlayCanvas"
+              ref={canvasRef}
+              position="absolute"
+              top="0"
+              left="0"
+              width="100%"
+              height="100%"
+              borderRadius="8px"
+              bg="transparent"
+              transform="scaleX(-1)"
+            />
+          )}
           {isDetecting && rightWristX !== 0 && rightWristY !== 0 && (
             <ThreejsEffect x={rightWristX} y={rightWristY} />
           )}

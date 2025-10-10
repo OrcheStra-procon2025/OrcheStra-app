@@ -16,6 +16,7 @@ const SelectionPage = () => {
 
   useEffect(() => {
     connectWebSocket();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleStartClick = () => {
