@@ -7,7 +7,9 @@ export const ParameterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedMusic, setSelectedMusic] = useState<MusicDataModel | null>(
     null,
   );
-  const [webSocketObject, setWebSocketObject] = useState<WebSocket | null>(null);
+  const [webSocketObject, setWebSocketObject] = useState<WebSocket | null>(
+    null,
+  );
   const [poseDataList, setPoseDataList] = useState<NormalizedLandmarkList[]>(
     [],
   );

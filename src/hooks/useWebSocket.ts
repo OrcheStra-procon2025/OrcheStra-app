@@ -10,10 +10,10 @@ interface WebSocketHandler {
 
 export const useWebSocket = (): WebSocketHandler => {
   const { webSocketObject, updateWebSocketObject } = useGlobalParams();
-  const callbacksRef = useRef<Array<((event: MessageEvent) => void)>>([]);
+  const callbacksRef = useRef<Array<(event: MessageEvent) => void>>([]);
 
   const connectWebSocket = (): void => {
-    const socket = new WebSocket("ws://10.247.186.56");
+    const socket = new WebSocket("ws://192.168.2.59");
     updateWebSocketObject(socket);
   };
 

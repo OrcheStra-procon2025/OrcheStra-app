@@ -26,7 +26,7 @@ export function calculatePlaybackRate(orig_bpm: number): number | void {
   console.debug("Beat detected!");
   beat_count += 1;
   console.log(lastBeat, beat_count);
-  if (lastBeat && beat_count >= 8) {
+  if (lastBeat && beat_count >= 4) {
     beatIntervals.push(now.getTime() - lastBeat.getTime());
     lastBeat = now;
   } else {

@@ -12,24 +12,27 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useVisionController } from "@/hooks/useVisionController";
 import { useCameraSelector } from "@/hooks/useCameraSelector";
-import { useConductingMusicPlayer } from "@/hooks/useConductingMusicPlayer";
+import { useVolumeChanger } from "@/hooks/useVolumeChanger";
+import { useMusicPlayer } from "@/hooks/useMusicPlayer";
+import { useMusicChanger } from "@/hooks/useMusicChanger";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import { useGlobalParams } from "@/context/useGlobalParams";
-import type { NormalizedLandmark, NormalizedLandmarkList } from "@/utils/models";
+import type { NormalizedLandmark, NormalizedLandmarkList, AccelDataModel } from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
+import { IS_DEBUG_MODE } from "@/utils/isDebugMode";
 
 const PlayingPage = () => {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
 
   // --- カスタムフック ---
   const { selectedMusic } = useGlobalParams();
-  const {
-    isPlayerReady,
-    playMusic,
-    stopMusic,
-    updateTempoFromPose,
-  } = useConductingMusicPlayer(selectedMusic?.path || null);
+  const { isPlayerReady, player, musicPath, playMusic, stopMusic, isError } = useMusicPlayer();
+  const { updateVolumeFromPose } = useVolumeChanger();
+  const { startChanging, processAccelInfo } = useMusicChanger();
+  const { connectWebSocket, registerOnMessage, removeOnMessage } = useWebSocket();
 
   const { cameraDevices, selectedDeviceId, isCameraReady, handleSelectChange } =
     useCameraSelector();
@@ -42,7 +45,10 @@ const PlayingPage = () => {
     stopDetection,
     rightWrist,
     leftWrist,
-  } = useVisionController(videoRef.current);
+  } = useVisionController(
+    videoRef.current,
+    IS_DEBUG_MODE ? canvasRef.current : null,
+  );
 
   // useEffectを使って、手首の座標が更新されたらテンポ更新関数を呼び出す
   useEffect(() => {
@@ -56,10 +62,14 @@ const PlayingPage = () => {
       currentPose[15] = leftWrist;  // 15は左手首のインデックス
       currentPose[16] = rightWrist; // 16は右手首のインデックス
 
-      updateTempoFromPose(currentPose);
+      updateVolumeFromPose(currentPose, player!);
       // ▲▲▲ 変更点 ▲▲▲
     }
-  }, [rightWrist, leftWrist, isDetecting, updateTempoFromPose]);
+  }, [rightWrist, leftWrist, isDetecting, updateVolumeFromPose]);
+
+  useEffect(() => {
+    connectWebSocket();
+  }, []);
 
   const isReady = isPlayerReady && isCameraReady && !isVisionLoading && !visionError;
   const isDisabled = !isReady || !selectedDeviceId;
@@ -105,12 +115,17 @@ const PlayingPage = () => {
     
     await startDetection(selectedDeviceId);
     await playMusic();
+    await startChanging(musicPath!);
+    await registerOnMessage((data: AccelDataModel) => {
+      processAccelInfo(player!, data);
+    });
   };
 
   const handleStop = async () => {
     if (!isDetecting) return;
     stopMusic();
     stopDetection();
+    await removeOnMessage();
     navigate("/result");
   };
 
@@ -176,6 +191,20 @@ const PlayingPage = () => {
             borderRadius="8px"
             transform="scaleX(-1)"
           />
+          {IS_DEBUG_MODE && (
+            <chakra.canvas
+              id="overlayCanvas"
+              ref={canvasRef}
+              position="absolute"
+              top="0"
+              left="0"
+              width="100%"
+              height="100%"
+              borderRadius="8px"
+              bg="transparent"
+              transform="scaleX(-1)"
+            />
+          )}
           {isDetecting && rightWristX !== 0 && rightWristY !== 0 && (
             <ThreejsEffect x={rightWristX} y={rightWristY} />
           )}
