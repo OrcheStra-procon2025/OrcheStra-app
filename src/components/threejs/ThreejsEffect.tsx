@@ -25,7 +25,7 @@ export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
         position: [
           (x * 20) / window.innerWidth,
           (-y /
-            (document.getElementById("webcam")?.getBoundingClientRect().height /
+            ((document.getElementById("webcam")?.getBoundingClientRect().height ?? 0) /
               2)) *
             3.796875,
           0,
