@@ -3,19 +3,18 @@ import { useEffect, useState, useCallback } from "react"; // useCallback をイ�
 import { OrthographicCamera } from "@react-three/drei";
 import { StarEffect } from "./SterEffect";
 
-
 const objectList: string[] = [
   "objects/star.glb",
   "objects/star_deepskyblue.glb",
   "objects/star_white.glb",
   "objects/star_pink2.glb",
   "objects/star_green.glb",
-]
+];
 
 // (中略)
 export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
   const [components, setComponents] = useState<
-    { id: number; position: [number, number, number], objectPath: string }[]
+    { id: number; position: [number, number, number]; objectPath: string }[]
   >([]);
 
   useEffect(() => {
@@ -24,11 +23,15 @@ export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
       {
         id: Date.now() + Math.random(),
         position: [
-          (x * 3.796875 * 2) / window.innerHeight,
-          -(y * 3.796875 * 2) / window.innerHeight,
+          (x * 20) / window.innerWidth,
+          (-y /
+            ((document.getElementById("webcam")?.getBoundingClientRect()
+              .height ?? 0) /
+              2)) *
+            3.796875,
           0,
         ],
-        objectPath: objectList[Math.floor(Math.random() * 5)]
+        objectPath: objectList[Math.floor(Math.random() * 5)],
       },
     ]);
     return;
@@ -78,4 +81,3 @@ export const ThreejsEffect = ({ x, y }: { x: number; y: number }) => {
     </Canvas>
   );
 };
-
