@@ -16,8 +16,11 @@ import { useVolumeChanger } from "@/hooks/useVolumeChanger";
 import { useMusicPlayer } from "@/hooks/useMusicPlayer";
 import { useMusicChanger } from "@/hooks/useMusicChanger";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useGlobalParams } from "@/context/useGlobalParams";
-import type { NormalizedLandmark, NormalizedLandmarkList, AccelDataModel } from "@/utils/models";
+import type {
+  NormalizedLandmark,
+  NormalizedLandmarkList,
+  AccelDataModel,
+} from "@/utils/models";
 import { ThreejsEffect } from "@/components/threejs/ThreejsEffect";
 import { IS_DEBUG_MODE } from "@/utils/isDebugMode";
 
@@ -28,11 +31,12 @@ const PlayingPage = () => {
   const [countdown, setCountdown] = useState<number | null>(null);
 
   // --- カスタムフック ---
-  const { selectedMusic } = useGlobalParams();
-  const { isPlayerReady, player, musicPath, playMusic, stopMusic, isError } = useMusicPlayer();
+  const { isPlayerReady, player, musicPath, playMusic, stopMusic } =
+    useMusicPlayer();
   const { updateVolumeFromPose } = useVolumeChanger();
   const { startChanging, processAccelInfo } = useMusicChanger();
-  const { connectWebSocket, registerOnMessage, removeOnMessage } = useWebSocket();
+  const { connectWebSocket, registerOnMessage, removeOnMessage } =
+    useWebSocket();
 
   const { cameraDevices, selectedDeviceId, isCameraReady, handleSelectChange } =
     useCameraSelector();
@@ -54,24 +58,22 @@ const PlayingPage = () => {
   useEffect(() => {
     // 検出中で、両手首のデータがある場合のみ実行
     if (isDetecting && rightWrist && leftWrist) {
-      // ▼▼▼ 変更点 ▼▼▼
-      // 空の配列として初期化
       const currentPose: NormalizedLandmarkList = [];
-      
-      // 正しいインデックスにデータを格納
-      currentPose[15] = leftWrist;  // 15は左手首のインデックス
-      currentPose[16] = rightWrist; // 16は右手首のインデックス
+
+      currentPose[15] = leftWrist;
+      currentPose[16] = rightWrist;
 
       updateVolumeFromPose(currentPose, player!);
-      // ▲▲▲ 変更点 ▲▲▲
     }
-  }, [rightWrist, leftWrist, isDetecting, updateVolumeFromPose]);
+  }, [rightWrist, leftWrist, isDetecting, updateVolumeFromPose, player]);
 
   useEffect(() => {
     connectWebSocket();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isReady = isPlayerReady && isCameraReady && !isVisionLoading && !visionError;
+  const isReady =
+    isPlayerReady && isCameraReady && !isVisionLoading && !visionError;
   const isDisabled = !isReady || !selectedDeviceId;
   const isCountingDown = countdown !== null;
 
@@ -91,8 +93,10 @@ const PlayingPage = () => {
     return { screenX: 0, screenY: 0 };
   };
 
-  const { screenX: rightWristX, screenY: rightWristY } = getScreenCoord(rightWrist);
-  const { screenX: leftWristX, screenY: leftWristY } = getScreenCoord(leftWrist);
+  const { screenX: rightWristX, screenY: rightWristY } =
+    getScreenCoord(rightWrist);
+  const { screenX: leftWristX, screenY: leftWristY } =
+    getScreenCoord(leftWrist);
 
   const disabledColor = "#A9A9A9";
 
@@ -112,7 +116,7 @@ const PlayingPage = () => {
         });
       }, 1000);
     });
-    
+
     await startDetection(selectedDeviceId);
     await playMusic();
     await startChanging(musicPath!);
@@ -130,20 +134,24 @@ const PlayingPage = () => {
   };
 
   const renderStatus = () => {
-    if (visionError) return <Text color="red.500">エラーが発生しました: {visionError}</Text>;
-    if (isVisionLoading) return <Text color="gray.500">指揮検出システムを準備中...</Text>;
-    if (!isCameraReady) return <Text color="gray.500">カメラアクセスを待機中...</Text>;
-    if (!isPlayerReady) return <Text color="gray.500">音楽ファイルを読み込み中...</Text>;
+    if (visionError)
+      return <Text color="red.500">エラーが発生しました: {visionError}</Text>;
+    if (isVisionLoading)
+      return <Text color="gray.500">指揮検出システムを準備中...</Text>;
+    if (!isCameraReady)
+      return <Text color="gray.500">カメラアクセスを待機中...</Text>;
+    if (!isPlayerReady)
+      return <Text color="gray.500">音楽ファイルを読み込み中...</Text>;
     return null;
   };
-  
+
   const getButtonText = () => {
     if (isDetecting) return "指揮中...";
     if (isCountingDown) return "開始...";
     if (isDisabled) return "準備中...";
     return "指揮を開始";
   };
-  
+
   return (
     <VStack paddingTop="10px">
       <Box
