@@ -7,7 +7,8 @@ export const calculateScoresAndProgressBarData = (
   movementScore: number,
   rhythmScore: number,
 ): ProgressBarData[] => {
-  let slowSum = 0, fastSum = 0;
+  let slowSum = 0,
+    fastSum = 0;
   for (let i = 0; i < probs.length; i++) {
     const style = ID_TO_STYLE_REMAP[i];
     const categories = STYLE_TO_CATEGORY_MAP[style] || [];
@@ -15,16 +16,17 @@ export const calculateScoresAndProgressBarData = (
     if (categories.includes("slow")) slowSum += prob;
     if (categories.includes("fast")) fastSum += prob;
   }
-  
+
   const aiTempoTotal = slowSum + fastSum;
   const aiTempoScore = aiTempoTotal > 0 ? (fastSum / aiTempoTotal) * 100 : 50;
 
   const AI_TEMPO_WEIGHT = 0.3;
   const DYNAMICS_TEMPO_WEIGHT = 0.5;
-  const combinedTempoScore = (aiTempoScore * AI_TEMPO_WEIGHT) + (rhythmScore * DYNAMICS_TEMPO_WEIGHT);
+  const combinedTempoScore =
+    aiTempoScore * AI_TEMPO_WEIGHT + rhythmScore * DYNAMICS_TEMPO_WEIGHT;
 
   const expressionScore = (combinedTempoScore + movementScore) / 2;
-  
+
   const applyContrast = (value: number): number => {
     const normalized = value / 100;
     const adjusted = 0.5 + 1.5 * (normalized - 0.5);
@@ -38,15 +40,15 @@ export const calculateScoresAndProgressBarData = (
       labelRight: "リズミカルな",
       value: applyContrast(combinedTempoScore),
     },
-    { 
+    {
       labelLeft: "小さな動き",
-      labelRight: "大きな動き", 
-      value: applyContrast(movementScore)
+      labelRight: "大きな動き",
+      value: applyContrast(movementScore),
     },
-    { 
+    {
       labelLeft: "細かな表現",
-      labelRight: "豊かな表現", 
-      value: applyContrast(expressionScore) 
+      labelRight: "豊かな表現",
+      value: applyContrast(expressionScore),
     },
   ];
 
@@ -58,13 +60,13 @@ export const generateFeedbackText = (bars: ProgressBarData[]): string => {
   const expression = bars[2]?.value || 50;
 
   if (expression > 60 && movement > 60) {
-      return "表現力豊かで、動きもダイナミックな素晴らしい指揮です！";
+    return "表現力豊かで、動きもダイナミックな素晴らしい指揮です！";
   } else if (expression > 60 && movement < 40) {
-      return "指揮の表現はニュアンスに富んでいますが、もう少し動きを大きくすると情熱がより伝わります。";
+    return "指揮の表現はニュアンスに富んでいますが、もう少し動きを大きくすると情熱がより伝わります。";
   } else if (expression < 40 && movement > 60) {
-      return "動きは非常にエネルギッシュです。表現にもっと抑揚やリズムの変化をつけるとさらに良くなります。";
+    return "動きは非常にエネルギッシュです。表現にもっと抑揚やリズムの変化をつけるとさらに良くなります。";
   } else if (expression < 40 && movement < 40) {
-      return "全体的にコンパクトな指揮です。もっと自信を持って、表現も動きも大きくしてみましょう！";
+    return "全体的にコンパクトな指揮です。もっと自信を持って、表現も動きも大きくしてみましょう！";
   } else {
     return "全体としてバランスの取れた指揮でした。";
   }
