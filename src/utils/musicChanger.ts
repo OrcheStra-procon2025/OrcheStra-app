@@ -44,7 +44,7 @@ export function calculatePlaybackRate(orig_bpm: number): number | void {
     const baseBPM = 60 / (averageInterval / 1000);
     let calculatedBPM;
     if (lastBPM) {
-      calculatedBPM = baseBPM + (baseBPM - lastBPM) * 0.25;
+      calculatedBPM = lastBPM + (baseBPM - lastBPM) * 0.25;
     } else {
       calculatedBPM = baseBPM;
     }
