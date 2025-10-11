@@ -12,6 +12,8 @@ interface ConductingMusicPlayer {
 
 export const useConductingMusicPlayer = (musicPath: string | null): ConductingMusicPlayer => {
   const playerRef = useRef<Tone.Player | null>(null);
+  const volumeNodeRef = useRef<Tone.Volume | null>(null);
+  const compressorRef = useRef<Tone.Compressor | null>(null); // ★ 変更点: Compressorを保持するRef
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   
   const lastPoseRef = useRef<NormalizedLandmarkList | null>(null);
@@ -19,26 +21,41 @@ export const useConductingMusicPlayer = (musicPath: string | null): ConductingMu
   const accelerationsRef = useRef<number[]>([]);
 
   useEffect(() => {
+    // 既存のインスタンスを破棄
     playerRef.current?.dispose();
+    volumeNodeRef.current?.dispose();
+    compressorRef.current?.dispose(); // ★ 変更点: compressorも破棄
     setIsPlayerReady(false);
+
     if (!musicPath) return;
 
     try {
+      // 1. コンプレッサーを作成
+      const compressor = new Tone.Compressor(-24, 12);
+      compressorRef.current = compressor;
+
+      // 2. Volumeノードを作成
+      const volumeNode = new Tone.Volume(0).toDestination();
+      volumeNodeRef.current = volumeNode;
+
+      // 3. Playerを作成し、CompressorとVolumeノードに順番に接続
       const player = new Tone.Player({
         url: musicPath,
         loop: true,
         onload: () => setIsPlayerReady(true),
-      }).toDestination();
+      }).chain(compressor, volumeNode); // ★ 変更点: .chain()で繋ぐ
+      
       playerRef.current = player;
+
     } catch (error) {
-      console.error("Tone.Playerの作成に失敗しました:", error);
+      console.error("Tone.jsのセットアップに失敗しました:", error);
     }
 
-    // ▼▼▼ 変更点 ▼▼▼
     return () => {
       playerRef.current?.dispose();
+      volumeNodeRef.current?.dispose();
+      compressorRef.current?.dispose(); // ★ 変更点: compressorも破棄
     };
-    // ▲▲▲ 変更点 ▲▲▲
   }, [musicPath]);
 
   const playMusic = useCallback(async () => {
@@ -51,8 +68,10 @@ export const useConductingMusicPlayer = (musicPath: string | null): ConductingMu
   }, []);
 
   const updateTempoFromPose = useCallback((currentPose: NormalizedLandmarkList) => {
+    const volumeNode = volumeNodeRef.current;
     const player = playerRef.current;
-    if (!player || player.state !== "started" || !lastPoseRef.current) {
+
+    if (!volumeNode || !player || player.state !== "started" || !lastPoseRef.current) {
       lastPoseRef.current = currentPose;
       return;
     }
@@ -67,9 +86,7 @@ export const useConductingMusicPlayer = (musicPath: string | null): ConductingMu
         }
     }
     currentVelocity /= keyJoints.length;
-
     const currentAcceleration = Math.abs(currentVelocity - lastVelocityRef.current);
-
     accelerationsRef.current.push(currentAcceleration);
     if (accelerationsRef.current.length > 30) {
         accelerationsRef.current.shift();
@@ -78,21 +95,18 @@ export const useConductingMusicPlayer = (musicPath: string | null): ConductingMu
     
     const MIN_ACCELERATION = 0.001;
     const MAX_ACCELERATION = 0.01;
-    const MIN_VOLUME_DB = -15;
+    const MIN_VOLUME_DB = -30;
     const MAX_VOLUME_DB = 0;
-
     let targetVolume = MAX_VOLUME_DB;
-    if (avgAcceleration < MIN_ACCELERATION) {
-      targetVolume = MIN_VOLUME_DB;
-    } else if (avgAcceleration > MAX_ACCELERATION) {
-      targetVolume = MAX_VOLUME_DB;
-    } else {
+    if (avgAcceleration < MIN_ACCELERATION) targetVolume = MIN_VOLUME_DB;
+    else if (avgAcceleration > MAX_ACCELERATION) targetVolume = MAX_VOLUME_DB;
+    else {
       const ratio = (avgAcceleration - MIN_ACCELERATION) / (MAX_ACCELERATION - MIN_ACCELERATION);
       targetVolume = MIN_VOLUME_DB + ratio * (MAX_VOLUME_DB - MIN_VOLUME_DB);
     }
 
     const smoothingFactor = 0.05;
-    player.volume.value = player.volume.value * (1 - smoothingFactor) + targetVolume * smoothingFactor;
+    volumeNode.volume.value = volumeNode.volume.value * (1 - smoothingFactor) + targetVolume * smoothingFactor;
 
     lastPoseRef.current = currentPose;
     lastVelocityRef.current = currentVelocity;
